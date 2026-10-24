@@ -82,10 +82,11 @@ def test_forced_switch_waits_for_messages(tmp_path):
     battle._check_outcome()
     assert battle.force_switch
     assert not battle.switch_menu, "picker must wait until messages are shown"
-    # confirm steps through pending faint messages first
-    game.input.pressed = {"confirm"}
-    battle.update(1 / 60)
-    assert battle.message_index == len(battle.messages) - 1
+    # confirm steps through every pending line, one at a time, starting at 0
+    for expected in range(len(battle.messages)):
+        assert battle.message_index == expected
+        game.input.pressed = {"confirm"}
+        battle.update(1 / 60)
     game.input.pressed = set()
     battle.update(1 / 60)
     assert battle.switch_menu, "picker opens after the queue drains"
@@ -202,3 +203,56 @@ def test_cooldown_uses_wall_clock(tmp_path):
     state2.last_battled = saved
     state2.last_battled["pineroot_scout"] -= REBATTLE_COOLDOWN + 10
     assert state2.can_challenge("pineroot_scout", data["pineroot_scout"])
+
+
+def test_trainer_intro_displays_at_construction(tmp_path):
+    """Reviewer: the first trainer line must actually display (index 0)."""
+    from src.battle.scene import TrainerBattle
+    from src.world.trainers import load_trainers
+
+    game = fresh_game(tmp_path)
+    data = load_trainers()["trainers"]["pineroot_scout"]
+    battle = TrainerBattle(game, mon("fernpup", 5), "pineroot_scout", data)
+    assert battle.message_index == 0
+    assert "wants to battle" in battle.messages[0]
+
+
+def test_no_silent_overwrite_when_all_slots_full(tmp_path):
+    """Reviewer P1: lodge must not silently overwrite a full slot."""
+    from src.save import save_game, load_game, serialize, SLOT_COUNT
+
+    game = fresh_game(tmp_path)
+    world = game.world
+    # fill every slot with distinct progress
+    for slot in range(SLOT_COUNT):
+        world.coins = 100 + slot
+        save_game(world, slot)
+    world.coins = 999
+    world.save_slot = None
+    world._pending_save_message = None
+
+    # lodge interact: all slots full -> picker opens, nothing overwritten yet
+    world.player.tile_x, world.player.tile_y = 16, 3
+    world.player.facing = "up"
+    world._interact()
+    assert world.save_menu, "slot picker must open when all slots are full"
+    assert world.coins == 999  # not saved yet
+    for slot in range(SLOT_COUNT):
+        assert load_game(slot)["coins"] == 100 + slot, f"slot {slot} must be untouched"
+
+    # player cancels: no write at all
+    game.input.pressed = {"cancel"}
+    world.update(1 / 60)
+    assert not world.save_menu
+    assert load_game(0)["coins"] == 100
+
+    # player picks slot 1 explicitly: only that slot changes
+    world._interact()
+    game.input.pressed = {"down"}
+    world.update(1 / 60)
+    game.input.pressed = {"confirm"}
+    world.update(1 / 60)
+    assert not world.save_menu
+    assert load_game(1)["coins"] == 999
+    assert load_game(0)["coins"] == 100
+    assert load_game(2)["coins"] == 102

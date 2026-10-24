@@ -26,6 +26,7 @@ class BattleScene:
         self.menu_index = 0
         self.messages = [f"A wild {enemy_monster.name} appeared!"]
         self._read = 0
+        self._confirmed = False
         self.finished = False
         self.outcome = None
         self.intro_timer = 1.0
@@ -39,22 +40,29 @@ class BattleScene:
         self.force_switch = False
 
     def _append_messages(self, new_messages):
-        """Append messages; the display always shows the first unread line.
+        """Append messages; nothing appended may be skipped.
 
-        `self._read` counts messages the player has stepped through, so
-        appending never skips anything: each line waits for a confirm.
+        `_read` is the index of the line currently displayed and `_confirmed`
+        marks that the player acted on it (a new command). Only then does the
+        display move to the first new message; chained appends within one
+        action (e.g. catch failure followed by the enemy's attack) stay put
+        so each line waits for its own confirm.
         """
         if not new_messages:
             return
+        first_new = len(self.messages)
         self.messages.extend(new_messages)
+        if self._confirmed:
+            self._read = first_new
+            self._confirmed = False
 
     @property
     def message_index(self):
-        """Index of the first unread message; the last one once all are read."""
-        return min(self._read + 1, len(self.messages) - 1)
+        """Index of the message currently displayed."""
+        return min(self._read, len(self.messages) - 1)
 
     def _advance_message(self):
-        if self.message_index < len(self.messages) - 1:
+        if self._read < len(self.messages) - 1:
             self._read += 1
             return True
         return False
@@ -139,6 +147,7 @@ class BattleScene:
         pass
 
     def _choose(self, command):
+        self._confirmed = True
         if command == "Run":
             self._try_run()
             return
@@ -160,6 +169,7 @@ class BattleScene:
         self._take_turn(self.player_mon.usable_moves()[0] if self.player_mon.usable_moves() else None)
 
     def _choose_trap(self, index):
+        self._confirmed = True
         available = self.inventory.traps()
         if not available or index >= len(available):
             self.trap_menu = False
@@ -226,6 +236,7 @@ class BattleScene:
 
     def _do_switch(self, new_mon):
         """Switch active monster; voluntary switching gives the enemy a free attack."""
+        self._confirmed = True
         forced = self.force_switch
         self.player_mon = new_mon
         self.switch_menu = False
@@ -448,8 +459,10 @@ class TrainerBattle(BattleScene):
             f"{trainer_data['name']} sent out {self.team[0].name}!",
         ]
         self._read = 0
+        self._confirmed = False
 
     def _choose(self, command):
+        self._confirmed = True
         if command == "Run":
             self._append_messages(["You can't run from a trainer battle!"])
             return

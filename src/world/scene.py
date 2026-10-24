@@ -44,6 +44,7 @@ class WorldScene:
         self.card_menu = False
         self.shop_menu = False
         self.shop_index = 0
+        self._pending_save_message = None
         self.trainer_state = TrainerState()
         self.trainers_data = load_trainers()
         self.encounters = EncounterTracker(ENCOUNTER_RATE)
@@ -169,13 +170,31 @@ class WorldScene:
                 )
 
     def _save_or_pick_slot(self, message):
-        """Save to the current slot, or the first free slot on a fresh game."""
+        """Save to the current slot, or the first free slot on a fresh game.
+
+        If every slot holds a save, open the slot picker instead of silently
+        overwriting one — the player must explicitly choose what to replace.
+        """
         from ..save import save_game, load_game, SLOT_COUNT
 
+        pending = getattr(self, "_pending_save_message", None)
+        if pending is not None:
+            # Slot picker was open for this save; the player chose a slot.
+            save_game(self, self.save_slot)
+            self._pending_save_message = None
+            self._flash(f"{pending} (Slot {self.save_slot + 1})")
+            return
+
         if self.save_slot is None:
-            self.save_slot = next(
-                (slot for slot in range(SLOT_COUNT) if load_game(slot) is None), 0
-            )
+            free = next((slot for slot in range(SLOT_COUNT) if load_game(slot) is None), None)
+            if free is None:
+                # All slots occupied: require an explicit choice.
+                self._pending_save_message = message
+                self.save_menu = True
+                self.save_index = 0
+                self._flash("All slots full! Pick one to overwrite.")
+                return
+            self.save_slot = free
         save_game(self, self.save_slot)
         self._flash(f"{message} (Slot {self.save_slot + 1})")
 
@@ -285,6 +304,10 @@ class WorldScene:
     def update(self, dt):
         if self.shop_menu:
             self._update_shop_menu()
+            return
+        if self.save_menu and not self.paused:
+            # Slot picker opened by the lodge/home when all slots are full.
+            self._update_pause_menu()
             return
         if self.paused:
             self._update_pause_menu()
@@ -428,20 +451,23 @@ class WorldScene:
                 self.card_menu = False
             return
         if self.save_menu:
-            from ..save import save_game, SLOT_COUNT
+            from ..save import SLOT_COUNT
 
+            overwriting = getattr(self, "_pending_save_message", None) is not None
             if input_mod.UP in pressed:
                 self.save_index = (self.save_index - 1) % SLOT_COUNT
             elif input_mod.DOWN in pressed:
                 self.save_index = (self.save_index + 1) % SLOT_COUNT
             elif input_mod.CONFIRM in pressed:
-                save_game(self, self.save_index)
                 self.save_slot = self.save_index
                 self.save_menu = False
                 self.paused = False
-                self._flash(f"Saved to slot {self.save_index + 1}!")
+                self._save_or_pick_slot("Game saved.")
             elif input_mod.CANCEL in pressed:
                 self.save_menu = False
+                if overwriting:
+                    self._pending_save_message = None
+                    self._flash("Save cancelled.")
             return
         if self.party_menu:
             if input_mod.UP in pressed:
