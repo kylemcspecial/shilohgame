@@ -40,7 +40,8 @@ python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' \
   || die "Python 3.9+ required (found $PYV)"
 
 if [[ ! -d "$VENV_DIR" ]]; then
-  if ! python3 -c "import venv" >/dev/null 2>&1; then
+  # Debian can ship venv without ensurepip until python3-venv is installed.
+  if ! python3 -c "import venv; import ensurepip" >/dev/null 2>&1; then
     say "python3-venv missing — installing it (needs sudo)"
     sudo apt-get update -qq && sudo apt-get install -y python3-venv       || die "could not install python3-venv —run: sudo apt install -y python3-venv"
   fi
