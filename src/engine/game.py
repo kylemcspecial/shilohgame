@@ -33,10 +33,15 @@ class Game:
         if battle is not self.world:
             caught = getattr(battle, "caught_monster", None)
             if caught is not None:
+                self.world.monsters_caught += 1
                 if len(self.world.party) < 6:
                     self.world.party.append(caught)
                 else:
                     self.world.storage.append(caught)
+            if getattr(battle, "outcome", None) == "won":
+                self.world.battles_won += 1
+            elif getattr(battle, "outcome", None) == "lost":
+                self.world.heal_and_revive()
         self.scene = self.world
 
     def toggle_fullscreen(self):

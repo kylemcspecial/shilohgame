@@ -100,6 +100,9 @@ class TileMap:
     def is_tall_grass(self, tx, ty):
         return self.tile_at(tx, ty) == "G"
 
+    def is_healing_lodge(self, tx, ty):
+        return self.tile_at(tx, ty) == "H"
+
     def is_door(self, tx, ty):
         return self.tile_at(tx, ty) == "D"
 

@@ -37,12 +37,22 @@ class WorldScene:
         self.zone_banner_timer = 2.0
         self.party_menu = False
         self.party_index = 0
+        self.pause_index = 0
+        self.save_menu = False
+        self.save_index = 0
         self.encounters = EncounterTracker(ENCOUNTER_RATE)
         self.inventory = Inventory({"basic_trap": 5, "potion_s": 3, "berry": 2})
         species_table = load_species()
         move_table = load_moves()
         self.party = [Monster("fernpup", 5, species_table, move_table)]
         self.storage = []
+        self.coins = 60
+        self.battles_won = 0
+        self.monsters_caught = 0
+        self.play_time = 0.0
+        self.message = None
+        self.message_timer = 0.0
+        self.save_slot = None
 
     def switch_zone(self, zone_id, tx, ty):
         self.zone_id = zone_id
@@ -63,6 +73,35 @@ class WorldScene:
         self.party_menu = False
         self.party_index = 0
 
+    def _heal_party(self):
+        """Full party heal, free, and auto-save to the current slot."""
+        from ..save import save_game
+
+        for mon in self.party + self.storage:
+            mon.hp = mon.max_hp
+            for mv in mon.moves:
+                mv["pp"] = mv["data"]["pp"]
+        self._flash("Your monsters are fully healed! Game saved.")
+        if self.save_slot is not None:
+            save_game(self, self.save_slot)
+
+    def _flash(self, text):
+        self.message = text
+        self.message_timer = 2.5
+
+    def heal_and_revive(self):
+        """Called after a total-party faint: warp home, heal, small coin loss."""
+        loss = max(0, min(self.coins // 4, 50))
+        self.coins -= loss
+        hr = TileMap(self.zones["hunters_rest"])
+        start = hr.player_start or (3, 4)
+        self.switch_zone("hunters_rest", *start)
+        for mon in self.party + self.storage:
+            mon.hp = mon.max_hp
+            for mv in mon.moves:
+                mv["pp"] = mv["data"]["pp"]
+        self._flash(f"You rushed to the Healing Lodge! Lost {loss} coins.")
+
     def _on_step(self):
         """Called each time the player finishes a step onto a new tile."""
         warp = self.tile_map.warp_at(self.player.tile_x, self.player.tile_y)
@@ -81,6 +120,23 @@ class WorldScene:
                     BattleScene(self.game, self.party[0], enemy, inventory=self.inventory)
                 )
 
+    def _interact(self):
+        """Confirm while facing a building: heal at the Lodge, rest and save at home."""
+        dx, dy = {
+            "up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0),
+        }[self.player.facing]
+        tx, ty = self.player.tile_x + dx, self.player.tile_y + dy
+        if self.tile_map.is_healing_lodge(tx, ty):
+            self._heal_party()
+        elif self.tile_map.tile_at(tx, ty) == "#":
+            from ..save import save_game
+
+            if self.save_slot is not None:
+                save_game(self, self.save_slot)
+                self._flash("You rested at home. Game saved!")
+            else:
+                self._flash("Home sweet home!")
+
     def update(self, dt):
         if self.paused:
             self._update_pause_menu()
@@ -92,6 +148,15 @@ class WorldScene:
 
         if was_moving and not self.player.moving:
             self._on_step()
+
+        if input_mod.CONFIRM in self.game.input.pressed:
+            self._interact()
+
+        self.play_time += dt
+        if self.message_timer > 0:
+            self.message_timer -= dt
+            if self.message_timer <= 0:
+                self.message = None
 
     def draw(self, surface):
         surface.fill(BLACK)
@@ -114,6 +179,8 @@ class WorldScene:
 
         if self.zone_banner_timer > 0:
             self._draw_banner(surface, self.zone_name)
+        if self.message:
+            self._draw_flash(surface)
         if self.paused:
             self._draw_pause(surface)
 
@@ -134,12 +201,39 @@ class WorldScene:
         rect = pygame.Rect(60, 40, 120, 80)
         pygame.draw.rect(surface, BLACK, rect)
         pygame.draw.rect(surface, WHITE, rect, 1)
-        title = self.font.render("PAUSED", False, WHITE, BLACK)
-        surface.blit(title, (rect.centerx - title.get_width() // 2, 50))
-        hint = self.font.render("Esc to resume", False, WHITE, BLACK)
-        surface.blit(hint, (rect.centerx - hint.get_width() // 2, 90))
+        if self.save_menu:
+            self._draw_save_menu(surface)
+            return
         if self.party_menu:
             self._draw_party(surface)
+            return
+        title = self.font.render("PAUSED", False, WHITE, BLACK)
+        surface.blit(title, (rect.centerx - title.get_width() // 2, 46))
+        for i, option in enumerate(self._PAUSE_MENU):
+            label = self.font.render(option, False, WHITE, BLACK)
+            y = 60 + i * 12
+            surface.blit(label, (rect.centerx - label.get_width() // 2 + 6, y))
+            if i == self.pause_index:
+                x = rect.centerx - label.get_width() // 2 - 4
+                pygame.draw.polygon(
+                    surface, WHITE, [(x - 6, y + 3), (x - 1, y + 6), (x - 6, y + 9)]
+                )
+
+    def _draw_save_menu(self, surface):
+        """Three-slot save picker drawn over the pause box."""
+        from ..save import SLOT_COUNT
+
+        rect = pygame.Rect(60, 40, 120, 80)
+        for i in range(SLOT_COUNT):
+            label = self.font.render(f"Slot {i + 1}", False, WHITE, BLACK)
+            y = 52 + i * 12
+            surface.blit(label, (rect.centerx - 20, y))
+            if i == self.save_index:
+                pygame.draw.polygon(
+                    surface, WHITE,
+                    [(rect.centerx - 28, y + 3), (rect.centerx - 23, y + 6),
+                     (rect.centerx - 28, y + 9)],
+                )
 
     def _draw_party(self, surface):
         """Party list in the pause menu; confirm swaps to the front slot."""
@@ -157,9 +251,27 @@ class WorldScene:
                     [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
                 )
 
+    _PAUSE_MENU = ("Monsters", "Save", "Close")
+
     def _update_pause_menu(self):
         """Handle input while the pause menu is open."""
         pressed = self.game.input.pressed
+        if self.save_menu:
+            from ..save import save_game, load_game, SLOT_COUNT
+
+            if input_mod.UP in pressed:
+                self.save_index = (self.save_index - 1) % SLOT_COUNT
+            elif input_mod.DOWN in pressed:
+                self.save_index = (self.save_index + 1) % SLOT_COUNT
+            elif input_mod.CONFIRM in pressed:
+                save_game(self, self.save_index)
+                self.save_slot = self.save_index
+                self.save_menu = False
+                self.paused = False
+                self._flash(f"Saved to slot {self.save_index + 1}!")
+            elif input_mod.CANCEL in pressed:
+                self.save_menu = False
+            return
         if self.party_menu:
             if input_mod.UP in pressed:
                 self.party_index = (self.party_index - 1) % len(self.party)
@@ -173,7 +285,27 @@ class WorldScene:
             elif input_mod.CANCEL in pressed:
                 self.party_menu = False
             return
-        if input_mod.CONFIRM in pressed:
-            self.party_menu = True
-            self.party_index = 0
+        if input_mod.UP in pressed:
+            self.pause_index = (self.pause_index - 1) % len(self._PAUSE_MENU)
+        elif input_mod.DOWN in pressed:
+            self.pause_index = (self.pause_index + 1) % len(self._PAUSE_MENU)
+        elif input_mod.CONFIRM in pressed:
+            choice = self._PAUSE_MENU[self.pause_index]
+            if choice == "Monsters":
+                self.party_menu = True
+                self.party_index = 0
+            elif choice == "Save":
+                self.save_menu = True
+                self.save_index = 0
+            elif choice == "Close":
+                self.paused = False
 
+
+    def _draw_flash(self, surface):
+        lines = [self.message[i:i+34] for i in range(0, len(self.message), 34)][:2]
+        rect = pygame.Rect(0, SCREEN_H - 14 - 10 * len(lines), SCREEN_W, 10 * len(lines) + 4)
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        for i, line in enumerate(lines):
+            label = self.font.render(line, False, WHITE, BLACK)
+            surface.blit(label, (rect.x + 3, rect.y + 2 + i * 10))
