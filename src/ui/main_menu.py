@@ -3,6 +3,7 @@ import pygame
 
 from ..engine.constants import SCREEN_W, SCREEN_H, BLACK, WHITE
 from ..engine import input as input_mod
+from ..engine.fonts import get_font
 
 _MENU = ("New Game", "Continue", "Options", "Quit")
 
@@ -12,8 +13,8 @@ class MainMenuScene:
 
     def __init__(self, game):
         self.game = game
-        self.font_big = pygame.font.Font(pygame.font.get_default_font(), 16)
-        self.font = pygame.font.Font(pygame.font.get_default_font(), 8)
+        self.font_big = get_font(16)
+        self.font = get_font(8)
         self.index = 0
         self.done = False
         self.action = None  # "new", "continue", "quit", or ("load", slot)

@@ -4,9 +4,11 @@ import math
 import pygame
 
 from ..engine.constants import SCREEN_W, SCREEN_H, BLACK, WHITE
+from ..engine.fonts import get_font
 from ..engine import input as input_mod
 from ..battle import battle as battle_mod
 from ..battle import catch as catch_mod
+from ..battle import mon_sprites
 from ..monsters.monster import Monster, load_species, load_moves, load_type_chart
 from ..monsters import leveling
 
@@ -22,7 +24,7 @@ class BattleScene:
         self.enemy_mon = enemy_monster
         self.inventory = inventory
         self.type_chart = load_type_chart()
-        self.font = pygame.font.Font(pygame.font.get_default_font(), 8)
+        self.font = get_font(8)
         self.menu_index = 0
         self.messages = [f"A wild {enemy_monster.name} appeared!"]
         self._read = 0
@@ -418,48 +420,13 @@ class BattleScene:
         surface.blit(label, ((SCREEN_W - label.get_width()) // 2, SCREEN_H // 2 - 4))
 
     def _draw_mon(self, surface, mon, pos, back):
-        """SNES-style monster: outline, 3-tone shading, idle bob, shadow."""
-        size = 32
+        """Unique per-species sprite with outline, idle bob, and shadow."""
         x, y = pos
         bob = int(pygame.time.get_ticks() / 400) % 2
         if not back:
             y += bob
-        outline = (28, 24, 40)
-        base = _MON_COLORS.get(mon.types[0], (200, 200, 200))
-        light = tuple(min(255, c + 50) for c in base)
-        dark = tuple(max(0, c - 60) for c in base)
-        sprite = pygame.Surface((size, size), pygame.SRCALPHA)
-        # body: outlined ellipse with top-left light band
-        pygame.draw.ellipse(sprite, outline, (-1, 7, 34, 26))
-        pygame.draw.ellipse(sprite, base, (0, 8, 32, 24))
-        pygame.draw.ellipse(sprite, light, (2, 8, 26, 14))
-        # belly
-        pygame.draw.ellipse(sprite, dark, (6, 18, 20, 12))
-        pygame.draw.ellipse(sprite, tuple(max(0, c - 25) for c in base), (7, 19, 18, 10))
-        # head
-        pygame.draw.circle(sprite, outline, (16, 10), 11)
-        pygame.draw.circle(sprite, base, (16, 10), 10)
-        pygame.draw.circle(sprite, light, (13, 7), 5)
-        # ears/horns
-        pygame.draw.polygon(sprite, outline, [(6, 4), (10, 10), (4, 10)])
-        pygame.draw.polygon(sprite, base, [(7, 5), (9, 9), (5, 9)])
-        pygame.draw.polygon(sprite, outline, [(26, 4), (28, 10), (22, 10)])
-        pygame.draw.polygon(sprite, base, [(25, 5), (27, 9), (23, 9)])
-        # eyes with white shine
-        for ex in (12, 20):
-            pygame.draw.circle(sprite, WHITE, (ex, 9), 3)
-            pygame.draw.circle(sprite, (20, 20, 30), (ex, 10), 2)
-            sprite.set_at((ex, 8), WHITE)
-        # fierce little fangs
-        pygame.draw.polygon(sprite, WHITE, [(13, 15), (14, 18), (15, 15)])
-        pygame.draw.polygon(sprite, WHITE, [(17, 15), (18, 18), (19, 15)])
-        # feet
-        pygame.draw.rect(sprite, outline, (4, 28, 6, 3))
-        pygame.draw.rect(sprite, dark, (5, 29, 4, 2))
-        pygame.draw.rect(sprite, outline, (22, 28, 6, 3))
-        pygame.draw.rect(sprite, dark, (23, 29, 4, 2))
-        # ground shadow
-        shadow = pygame.Surface((size, 5), pygame.SRCALPHA)
+        sprite = mon_sprites.build_monster_sprite(mon.species_id, mon.types)
+        shadow = pygame.Surface((32, 5), pygame.SRCALPHA)
         pygame.draw.ellipse(shadow, (16, 16, 24, 90), (4, 0, 24, 5))
         surface.blit(shadow, (x + 2, y + 30))
         surface.blit(sprite, (x, y))
@@ -602,16 +569,6 @@ class BattleScene:
         y = 14 + 16
         pygame.draw.circle(surface, (180, 60, 50), (int(x), int(y)), 8)
         pygame.draw.circle(surface, (240, 180, 120), (int(x), int(y - 4)), 4)
-
-
-_MON_COLORS = {
-    "leaf": (80, 180, 80),
-    "water": (80, 130, 230),
-    "storm": (240, 220, 110),
-    "frost": (170, 220, 240),
-    "stone": (150, 140, 120),
-    "ember": (240, 120, 60),
-}
 
 
 def move_name(move_id):

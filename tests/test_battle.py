@@ -154,9 +154,36 @@ def test_warps_valid_and_reachable():
 def test_warp_lookup():
     zones = load_zones()["zones"]
     hr = TileMap(zones["hunters_rest"])
-    warp = hr.warp_at(5, 12)
+    warp = hr.warp_at(6, 12)
     assert warp is not None and warp["zone"] == "whispering_pines"
     assert hr.warp_at(2, 2) is None
+
+
+def test_every_door_warps_and_every_warp_is_a_door():
+    """Doors and warps must match exactly: no dead doors, no invisible warps."""
+    zones = load_zones()["zones"]
+    for zid, zone in zones.items():
+        tm = TileMap(zone)
+        doors = {
+            (x, y)
+            for y in range(tm.height)
+            for x in range(tm.width)
+            if tm.tile_at(x, y) == "D"
+        }
+        warp_tiles = {(w["x"], w["y"]) for w in tm.warps}
+        assert doors == warp_tiles, (zid, doors ^ warp_tiles)
+
+
+def test_warp_arrivals_are_safe():
+    """Arriving must never land on a warp (ping-pong) or a solid/tall-grass tile."""
+    zones = load_zones()["zones"]
+    for zid, zone in zones.items():
+        tm = TileMap(zone)
+        for w in tm.warps:
+            target = TileMap(zones[w["zone"]])
+            assert not target.is_solid(w["tx"], w["ty"])
+            assert not target.is_tall_grass(w["tx"], w["ty"])
+            assert target.warp_at(w["tx"], w["ty"]) is None, (zid, w)
 
 
 def test_tall_grass_in_pines():

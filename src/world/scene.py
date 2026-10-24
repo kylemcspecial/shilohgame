@@ -6,6 +6,7 @@ import pygame
 
 from ..engine.constants import SCREEN_W, SCREEN_H, TILE_SIZE, BLACK, WHITE
 from ..engine import input as input_mod
+from ..engine.fonts import get_font
 from ..world.tiles import TileMap, Tileset
 from ..world.player import Player, camera_offset
 from ..world.encounters import EncounterTracker
@@ -43,7 +44,7 @@ class WorldScene:
         start = self.tile_map.player_start or (2, 2)
         self.player = Player(*start)
         self.paused = False
-        self.font = pygame.font.Font(pygame.font.get_default_font(), 8)
+        self.font = get_font(8)
         self.zone_banner_timer = 2.0
         self.party_menu = False
         self.party_index = 0
