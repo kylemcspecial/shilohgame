@@ -71,9 +71,11 @@ def roll_wild(zone, party=None, species_table=None, move_table=None):
     if party:
         avg = sum(m.level for m in party) / len(party)
         best = max(m.level for m in party)
-        level = max(level, min(int(avg), best + 5))
-    if random.random() < 0.01:
+        # Scale toward the party average, but never above best + 5 (spec 9.3)
+        # and never above the zone's own ceiling so starter zones stay safe.
+        level = min(max(level, min(int(avg), best + 5)), hi)
+    if zone.get("legendary_chance", 0) > 0 and random.random() < zone["legendary_chance"]:
         legendaries = [sid for sid, s in species_table.items() if s["tier"] == 4]
         species_id = random.choice(legendaries)
-        level = min(50, level + 2)
+        level = min(50, hi + 2)
     return Monster(species_id, level, species_table, move_table)

@@ -39,6 +39,30 @@ class BattleScene:
         self.switch_index = 0
         self.force_switch = False
 
+    def _append_messages(self, new_messages):
+        """Append messages and show the first new one; CONFIRM steps through the rest."""
+        if not new_messages:
+            return
+        self.messages.extend(new_messages)
+        self.message_index = len(self.messages) - len(new_messages)
+
+    def _xp_messages(self, xp):
+        """Apply XP and build level-up/evolution/learned-move messages."""
+        events = leveling.grant_xp(self.player_mon, xp)
+        messages = []
+        for event in events:
+            if event["type"] == "level_up":
+                self.game.audio.level_up()
+                messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
+            elif event["type"] == "evolved":
+                messages.append(
+                    f"What? {self.player_mon.pre_evolution_name} evolved into {self.player_mon.name}!"
+                )
+            elif event["type"] == "learned_move":
+                move_name = load_moves()[event["move"]]["name"]
+                messages.append(f"{self.player_mon.name} learned {move_name}!")
+        return messages
+
     # ------------------------------------------------------------------ input
 
     def update(self, dt):
@@ -105,16 +129,14 @@ class BattleScene:
         if command == "Switch":
             living = [m for m in self.party if not m.fainted and m is not self.player_mon]
             if not living:
-                self.messages.append("No other monsters to send out!")
-                self.message_index = len(self.messages) - 1
+                self._append_messages(["No other monsters to send out!"])
                 return
             self.switch_menu = True
             self.switch_index = 0
             return
         if command == "Catch":
             if not self.inventory.traps():
-                self.messages.append("You have no traps left!")
-                self.message_index = len(self.messages) - 1
+                self._append_messages(["You have no traps left!"])
                 return
             self.trap_menu = True
             self.trap_index = 0
@@ -129,8 +151,7 @@ class BattleScene:
         item_id, item = available[index]
         self.trap_menu = False
         if not catch_mod.is_weak_enough(self.enemy_mon):
-            self.messages.append("It's too strong to catch yet!")
-            self.message_index = len(self.messages) - 1
+            self._append_messages(["It's too strong to catch yet!"])
             return
         self.inventory.remove(item_id)
         self.shake_timer = 1.2
@@ -140,14 +161,15 @@ class BattleScene:
         if success:
             self.game.audio.catch_success()
             self.caught_monster = self.enemy_mon
-            self.messages.append(f"Gotcha! {self.enemy_mon.name} was caught!")
-            self.message_index = len(self.messages) - 1
+            catch_messages = [f"Gotcha! {self.enemy_mon.name} was caught!"]
+            xp = leveling.xp_for_defeat(self.enemy_mon.level, self.enemy_mon.species["tier"])
+            catch_messages.extend(self._xp_messages(xp))
+            self._append_messages(catch_messages)
             self.outcome = "caught"
             self.finished = True
         else:
             self.game.audio.catch_fail()
-            self.messages.append("Oh no! It broke free!")
-            self.message_index = len(self.messages) - 1
+            self._append_messages(["Oh no! It broke free!"])
             self._enemy_free_attack()
 
     def _take_turn(self, player_move):
@@ -170,8 +192,7 @@ class BattleScene:
             _, new = battle_mod.apply_move(attacker, defender, move, self.type_chart)
             messages.extend(new)
 
-        self.messages.extend(messages or ["Nothing happened!"])
-        self.message_index = len(self.messages) - 1
+        self._append_messages(messages or ["Nothing happened!"])
         self._check_outcome()
 
     def _enemy_move(self):
@@ -192,20 +213,18 @@ class BattleScene:
         self.player_mon = new_mon
         self.switch_menu = False
         self.force_switch = False
-        self.messages.append(f"Go, {new_mon.name}!")
-        self.message_index = len(self.messages) - 1
+        self._append_messages([f"Go, {new_mon.name}!"])
         if not self.finished and not self.player_mon.fainted and not self.enemy_mon.fainted:
             self._enemy_free_attack()
 
     def _try_run(self):
         if battle_mod.run_chance(self.player_mon, self.enemy_mon):
-            self.messages.append("Got away safely!")
+            self._append_messages(["Got away safely!"])
             self.outcome = "ran"
             self.finished = True
         else:
-            self.messages.append("Couldn't get away!")
+            self._append_messages(["Couldn't get away!"])
             self._enemy_free_attack()
-            self._check_outcome()
 
     def _enemy_free_attack(self):
         """The wild monster attacks after a failed catch or run attempt."""
@@ -213,36 +232,31 @@ class BattleScene:
         if move is None:
             return
         _, new = battle_mod.apply_move(self.enemy_mon, self.player_mon, move, self.type_chart)
-        self.messages.extend(new)
-        self.message_index = len(self.messages) - 1
+        self._append_messages(new)
         self._check_outcome()
 
     def _check_outcome(self):
         if self.enemy_mon.fainted:
             self.game.audio.hit()
-            self.messages.append(f"The wild {self.enemy_mon.name} fainted!")
+            outcome_messages = [f"The wild {self.enemy_mon.name} fainted!"]
             xp = leveling.xp_for_defeat(self.enemy_mon.level, self.enemy_mon.species["tier"])
-            events = leveling.grant_xp(self.player_mon, xp)
-            for event in events:
-                if event["type"] == "level_up":
-                    self.game.audio.level_up()
-                    self.messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
-                elif event["type"] == "evolved":
-                    self.messages.append(f"What? {self.player_mon.pre_evolution_name} evolved into {self.player_mon.name}!")
-                elif event["type"] == "learned_move":
-                    move_name = load_moves()[event["move"]]["name"]
-                    self.messages.append(f"{self.player_mon.name} learned {move_name}!")
-            self.messages.append("You won the battle!")
+            outcome_messages.extend(self._xp_messages(xp))
+            outcome_messages.append("You won the battle!")
+            self._append_messages(outcome_messages)
             self.outcome = "won"
             self.finished = True
         elif self.player_mon.fainted:
             if self._next_living_party_member() is not None:
-                self.messages.append(f"{self.player_mon.name} fainted!")
-                self.messages.append("Send out another monster?")
+                self._append_messages([
+                    f"{self.player_mon.name} fainted!",
+                    "Send out another monster?",
+                ])
                 self.force_switch = True
                 return
-            self.messages.append(f"{self.player_mon.name} fainted!")
-            self.messages.append("You hurried back home...")
+            self._append_messages([
+                f"{self.player_mon.name} fainted!",
+                "You hurried back home...",
+            ])
             self.outcome = "lost"
             self.finished = True
 
@@ -413,12 +427,10 @@ class TrainerBattle(BattleScene):
 
     def _choose(self, command):
         if command == "Run":
-            self.messages.append("You can't run from a trainer battle!")
-            self.message_index = len(self.messages) - 1
+            self._append_messages(["You can't run from a trainer battle!"])
             return
         if command == "Catch":
-            self.messages.append("You can't catch another trainer's monster!")
-            self.message_index = len(self.messages) - 1
+            self._append_messages(["You can't catch another trainer's monster!"])
             return
         super()._choose(command)
 
@@ -426,39 +438,36 @@ class TrainerBattle(BattleScene):
         if self.enemy_mon.fainted:
             remaining = [m for m in self.team if not m.fainted and m is not self.enemy_mon]
             if remaining:
-                self.messages.append(f"The wild {self.enemy_mon.name} fainted!")
+                self._append_messages([
+                    f"{self.trainer['name']}'s {self.enemy_mon.name} fainted!",
+                    f"{self.trainer['name']} sent out {remaining[0].name}!",
+                ])
                 self.enemy_mon = remaining[0]
-                self.messages.append(f"{self.trainer['name']} sent out {self.enemy_mon.name}!")
-                self.message_index = len(self.messages) - 1
                 return
             from ..monsters import leveling
 
-            self.messages.append(f"{self.enemy_mon.name} fainted!")
             xp = sum(
                 leveling.xp_for_defeat(m.level, m.species["tier"]) for m in self.team
             )
-            events = leveling.grant_xp(self.player_mon, xp)
-            for event in events:
-                if event["type"] == "level_up":
-                    self.game.audio.level_up()
-                    self.messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
-                elif event["type"] == "evolved":
-                    self.messages.append(f"What? {self.player_mon.pre_evolution_name} evolved into {self.player_mon.name}!")
-                elif event["type"] == "learned_move":
-                    move_name = load_moves()[event["move"]]["name"]
-                    self.messages.append(f"{self.player_mon.name} learned {move_name}!")
-            self.messages.append(f"\"{self.trainer['defeat']}\"\n")
-            self.messages.append(f"You got {self.trainer['reward']} coins!")
+            outcome_messages = [f"{self.enemy_mon.name} fainted!"]
+            outcome_messages.extend(self._xp_messages(xp))
+            outcome_messages.append(f"\"{self.trainer['defeat']}\"")
+            outcome_messages.append(f"You got {self.trainer['reward']} coins!")
+            self._append_messages(outcome_messages)
             self.outcome = "trainer_won"
             self.finished = True
         elif self.player_mon.fainted:
             if self._next_living_party_member() is not None:
-                self.messages.append(f"{self.player_mon.name} fainted!")
-                self.messages.append("Send out another monster?")
+                self._append_messages([
+                    f"{self.player_mon.name} fainted!",
+                    "Send out another monster?",
+                ])
                 self.force_switch = True
                 return
-            self.messages.append(f"{self.player_mon.name} fainted!")
-            self.messages.append("You hurried back home...")
+            self._append_messages([
+                f"{self.player_mon.name} fainted!",
+                "You hurried back home...",
+            ])
             self.outcome = "lost"
             self.finished = True
 

@@ -9,8 +9,6 @@ import os
 
 import pygame
 
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy" if not os.environ.get("AUDIODEV") else "dummy")
-
 try:
     import numpy as _np
 except ImportError:
@@ -28,7 +26,6 @@ def _tone_samples(freq, duration, volume, wave="square"):
         samples = _np.sign(_np.sin(2 * math.pi * freq * t))
     else:
         samples = _np.sin(2 * math.pi * freq * t)
-    envelope = _np.minimum(1.0, (n - t * _SAMPLE_RATE * 0) / n)
     fade = _np.linspace(1.0, 0.0, n)
     samples = (samples * fade * volume * 0.5 * 32767).astype(_np.int16)
     stereo = _np.column_stack((samples, samples))
@@ -46,11 +43,11 @@ class Audio:
         self.available = bool(
             pygame.mixer.get_init() or self._try_init_mixer()
         )
-        if not self.available:
-            _SilentSoundMixin.silent = True
 
     @staticmethod
     def _try_init_mixer():
+        if pygame.mixer.get_init():
+            return True
         try:
             pygame.mixer.init(frequency=_SAMPLE_RATE, size=-16, channels=2, buffer=512)
             return True
@@ -60,7 +57,7 @@ class Audio:
     def _build(self, key, freq, duration, wave="square"):
         if key in self._cache:
             return self._cache[key]
-        snd = _make_sound(freq, duration, self.sfx_volume, wave)
+        snd = _make_sound(freq, duration, wave)
         self._cache[key] = snd
         return snd
 
@@ -97,15 +94,11 @@ class Audio:
         self.play("heal", 700, 0.12, wave="sine" if _np else "square")
 
 
-class _SilentSoundMixin:
-    silent = False
-
-
-def _make_sound(freq, duration, volume, wave):
+def _make_sound(freq, duration, wave):
     if _np is None:
         return None
     try:
-        stereo = _tone_samples(freq, duration, volume, wave)
+        stereo = _tone_samples(freq, duration, 1.0, wave)
         if stereo is None:
             return None
         return pygame.sndarray.make_sound(stereo)

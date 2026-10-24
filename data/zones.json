@@ -320,7 +320,8 @@
       "encounter_levels": [
         13,
         22
-      ]
+      ],
+      "legendary_chance": 0.01
     },
     "fernfall": {
       "name": "Fernfall",
@@ -431,7 +432,8 @@
       "encounter_levels": [
         23,
         35
-      ]
+      ],
+      "legendary_chance": 0.02
     },
     "mossy_hollow_gate": {
       "name": "Thornwick",

@@ -76,6 +76,9 @@ class WorldScene:
         self.paused = not self.paused
         self.party_menu = False
         self.party_index = 0
+        self.save_menu = False
+        self.card_menu = False
+        self.pause_index = 0
 
     def _open_shop(self):
         """Face the Trap Shop and confirm to buy a Basic Trap (20 coins)."""
@@ -95,9 +98,11 @@ class WorldScene:
             for mv in mon.moves:
                 mv["pp"] = mv["data"]["pp"]
         self.game.audio.heal()
-        self._flash("Your monsters are fully healed! Game saved.")
         if self.save_slot is not None:
             save_game(self, self.save_slot)
+            self._flash("Your monsters are fully healed! Game saved.")
+        else:
+            self._flash("Your monsters are fully healed! (Save from the pause menu first.)")
 
     def _flash(self, text):
         self.message = text
@@ -116,6 +121,13 @@ class WorldScene:
                 mv["pp"] = mv["data"]["pp"]
         self._flash(f"You rushed to the Healing Lodge! Lost {loss} coins.")
 
+    def _first_living(self):
+        """First non-fainted party member, or None if the whole party is down."""
+        for mon in self.party:
+            if not mon.fainted:
+                return mon
+        return None
+
     def _on_step(self):
         """Called each time the player finishes a step onto a new tile."""
         warp = self.tile_map.warp_at(self.player.tile_x, self.player.tile_y)
@@ -128,11 +140,15 @@ class WorldScene:
             self.player.tile_x, self.player.tile_y
         ):
             if self.encounters.should_trigger():
+                lead = self._first_living()
+                if lead is None:
+                    self.heal_and_revive()
+                    return
                 from ..battle.scene import BattleScene
 
                 enemy = roll_wild(zone, party=self.party)
                 self.game.start_battle(
-                    BattleScene(self.game, self.party[0], enemy, inventory=self.inventory)
+                    BattleScene(self.game, lead, enemy, inventory=self.inventory)
                 )
 
     def _trainer_at(self, tx, ty):
@@ -156,11 +172,15 @@ class WorldScene:
             return
         if self.trainer_state.defeated.get(tid) and not trainer.get("rival"):
             pass  # cooldown handled by can_challenge
+        lead = self._first_living()
+        if lead is None:
+            self.heal_and_revive()
+            return
         self.trainer_state.record_start(tid)
         from ..battle.scene import TrainerBattle
 
         self.game.start_battle(
-            TrainerBattle(self.game, self.party[0], tid, trainer, inventory=self.inventory)
+            TrainerBattle(self.game, lead, tid, trainer, inventory=self.inventory)
         )
 
     def _interact(self):
@@ -247,14 +267,10 @@ class WorldScene:
         pygame.draw.rect(surface, BLACK, rect)
         pygame.draw.rect(surface, WHITE, rect, 1)
         if self.card_menu:
-            if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
-                self.card_menu = False
+            self._draw_trainer_card(surface)
             return
         if self.save_menu:
             self._draw_save_menu(surface)
-            return
-        if self.card_menu:
-            self._draw_trainer_card(surface)
             return
         if self.party_menu:
             self._draw_party(surface)

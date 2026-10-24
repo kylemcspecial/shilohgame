@@ -32,6 +32,9 @@ def serialize(world):
         "storage": [_serialize_monster(m) for m in world.storage],
         "inventory": dict(world.inventory.counts),
         "trainer_defeated": dict(getattr(world.trainer_state, "defeated", {})),
+        "trainer_last_battled": {
+            k: v for k, v in getattr(world.trainer_state, "last_battled", {}).items()
+        },
     }
 
 
@@ -125,3 +128,4 @@ def apply_save(world, data):
     world.inventory = Inventory(data.get("inventory", {}))
     if hasattr(world, "trainer_state"):
         world.trainer_state.defeated = dict(data.get("trainer_defeated", {}))
+        world.trainer_state.last_battled = dict(data.get("trainer_last_battled", {}))

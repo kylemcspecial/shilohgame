@@ -22,12 +22,15 @@ class TrainerState:
     def can_challenge(self, trainer_id, trainer):
         if trainer.get("requires_defeat") and not self.defeated.get(trainer["requires_defeat"]):
             return False
-        last = self.last_battled.get(trainer_id)
-        if last is not None and not self.defeated.get(trainer_id):
+        if not self.defeated.get(trainer_id):
             return True  # never beaten them; always allow
-        if self.defeated.get(trainer_id) and last is not None:
-            return (time.monotonic() - last) >= REBATTLE_COOLDOWN
-        return True
+        last = self.last_battled.get(trainer_id)
+        if last is None:
+            # Defeated but no timer (e.g. restored from an older save):
+            # start the cooldown now rather than allowing an instant rematch.
+            self.last_battled[trainer_id] = time.monotonic()
+            return False
+        return (time.monotonic() - last) >= REBATTLE_COOLDOWN
 
     def record_win(self, trainer_id):
         self.defeated[trainer_id] = True
