@@ -57,6 +57,7 @@ def check_evolution(monster, species_table=None):
     new_mon.moves = moves
     new_mon.xp = xp
     monster.__dict__.update(new_mon.__dict__)
+    monster.brace_stacks = 0
     monster.pre_evolution_name = old_name
     return evo["species"]
 
@@ -68,6 +69,7 @@ def _level_up(monster):
     monster.hp = min(monster.max_hp, monster.hp + (monster.max_hp - old_max))
     monster.attack = monster.species["base_stats"]["attack"] + monster.level // 2
     monster.defense = monster.species["base_stats"]["defense"] + monster.level // 2
+    monster.brace_stacks = 0
     monster.speed = monster.species["base_stats"]["speed"] + monster.level // 2
     monster.special = monster.species["base_stats"]["special"] + monster.level // 2
 

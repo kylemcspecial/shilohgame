@@ -99,15 +99,18 @@ class WorldScene:
         if self.shop_menu and self.paused:
             self.shop_menu = False
 
-    _SHOP_ITEMS = ("basic_trap", "stout_trap", "high_trap", "ultra_trap")
+    _SHOP_ITEMS = (
+        "basic_trap", "stout_trap", "high_trap", "ultra_trap",
+        "potion_s", "potion_m", "berry",
+    )
 
     def _open_shop(self):
-        """Open the Trap Shop menu (items gated by player level, spec 7.2)."""
+        """Open the Trap Shop menu (traps gated by player level, spec 7.2)."""
         self.shop_menu = True
         self.shop_index = 0
 
     def _shop_available(self):
-        """Shop entries unlocked at the player's level, with prices."""
+        """Shop entries with prices; traps unlock by level, consumables always stocked."""
         from ..items.inventory import load_items
 
         items = load_items()
