@@ -63,9 +63,14 @@ def apply_move(attacker, defender, move_entry, type_chart, rng=None):
 
     if move["category"] == "defensive":
         if move["effect"] == "raise_defense":
-            attacker.defense += max(1, attacker.level // 2 + 1)
-            events.append("defense_up")
-            messages.append(f"{attacker.name} braced for impact!")
+            stacks = int(getattr(attacker, "brace_stacks", 0))
+            if stacks >= 2:
+                messages.append(f"{attacker.name} is already braced!")
+            else:
+                attacker.brace_stacks = stacks + 1
+                attacker.defense += max(1, attacker.level // 2 + 1)
+                events.append("defense_up")
+                messages.append(f"{attacker.name} braced for impact!")
         return events, messages
 
     dealt, multiplier = damage(attacker, defender, move, type_chart, rng)

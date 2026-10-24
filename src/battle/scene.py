@@ -119,8 +119,14 @@ class BattleScene:
                 chosen = moves[self.move_index]
                 self.move_menu = False
                 if chosen["pp"] <= 0:
+                    # Out of PP: pass the turn (a struggle) so the enemy attacks
+                    # and the battle can still resolve toward defeat/revival.
                     self._confirmed = True
-                    self._append_messages([f"{chosen['data']['name']} has no PP left!"])
+                    self._append_messages([
+                        f"{chosen['data']['name']} has no PP left!",
+                        f"{self.player_mon.name} can only struggle!",
+                    ])
+                    self._take_turn(None)
                 else:
                     self._take_turn(chosen)
             elif input_mod.CANCEL in pressed:
@@ -237,6 +243,8 @@ class BattleScene:
             if move is None:
                 if attacker is self.player_mon:
                     messages.append(f"{attacker.name} has no moves left!")
+                    attacker.hp = max(0, attacker.hp - 1)
+                    messages.append(f"{attacker.name} struggles and hurts itself!")
                 continue
             _, new = battle_mod.apply_move(attacker, defender, move, self.type_chart)
             messages.extend(new)

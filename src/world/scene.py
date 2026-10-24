@@ -15,6 +15,15 @@ from ..world.trainers import TrainerState, trainers_in_zone, load_trainers
 
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data")
 
+
+def _reset_battle_boosts(mon):
+    """Full restore: HP, PP, and any in-battle stat boosts (brace stacks)."""
+    mon.hp = mon.max_hp
+    mon.brace_stacks = 0
+    mon.defense = mon.species["base_stats"]["defense"] + mon.level // 2
+    for mv in mon.moves:
+        mv["pp"] = mv["data"]["pp"]
+
 ENCOUNTER_RATE = 0.125  # ~1 in 8 steps in tall grass
 
 
@@ -201,9 +210,7 @@ class WorldScene:
     def _heal_party(self):
         """Full party heal, free, and auto-save (spec 10: lodge always saves)."""
         for mon in self.party + self.storage:
-            mon.hp = mon.max_hp
-            for mv in mon.moves:
-                mv["pp"] = mv["data"]["pp"]
+            _reset_battle_boosts(mon)
         self.game.audio.heal()
         self._save_or_pick_slot("Your monsters are fully healed! Game saved.")
 
@@ -219,9 +226,7 @@ class WorldScene:
         start = hr.player_start or (3, 4)
         self.switch_zone("hunters_rest", *start)
         for mon in self.party + self.storage:
-            mon.hp = mon.max_hp
-            for mv in mon.moves:
-                mv["pp"] = mv["data"]["pp"]
+            _reset_battle_boosts(mon)
         self._flash(f"You rushed to the Healing Lodge! Lost {loss} coins.")
 
     def _first_living(self):

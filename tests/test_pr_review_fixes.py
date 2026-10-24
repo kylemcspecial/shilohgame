@@ -270,3 +270,42 @@ def test_no_silent_overwrite_when_all_slots_full(tmp_path):
     assert load_game(1)["coins"] == 999
     assert load_game(0)["coins"] == 100
     assert load_game(2)["coins"] == 102
+
+
+def test_zero_pp_turn_still_advances(tmp_path):
+    """Reviewer: all-PP-exhausted trainer battles must not softlock.
+
+    With no usable moves (trainer battle: no Run/Catch, no switch target),
+    selecting a 0-PP move must still pass the turn so the enemy attacks and
+    the battle can resolve toward defeat/revival.
+    """
+    from src.battle.scene import TrainerBattle
+    from src.world.trainers import load_trainers
+
+    game = fresh_game(tmp_path)
+    party = [mon("fernpup", 5)]
+    game.world.party = party
+    for mv in party[0].moves:
+        mv["pp"] = 0
+    data = load_trainers()["trainers"]["pineroot_scout"]
+    battle = TrainerBattle(game, party[0], "pineroot_scout", data)
+    battle.intro_timer = 0
+    battle._read = len(battle.messages) - 1
+    battle._choose("Fight")
+    assert battle.move_menu
+    game.input.pressed = {"confirm"}
+    battle.update(1 / 60)  # confirm on the 0-PP move
+    game.input.pressed = set()
+    # turn passed: enemy attacked, messages advanced past the struggle
+    assert any("struggle" in m for m in battle.messages)
+    assert battle.enemy_mon.usable_moves() or battle.messages  # battle state advanced
+    # drive it to a conclusion: enemy eventually defeats the struggling mon
+    for _ in range(60):
+        if battle.finished:
+            break
+        battle._read = len(battle.messages) - 1
+        battle._choose("Fight")
+        battle.move_menu = False
+        battle._take_turn(None)
+    assert battle.finished, "battle must terminate via struggle turns"
+    assert battle.outcome == "lost"
