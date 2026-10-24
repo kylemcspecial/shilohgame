@@ -3,28 +3,41 @@
 A retro 2D top-down monster-catching RPG for an 8-year-old hunter.
 Built with Python + pygame-ce. Target platform: Raspberry Pi 4 (Twister OS).
 
-## Run
+## Install on Raspberry Pi
 
-Quick start:
-
-```bash
-pip install -r requirements.txt
-python main.py
-```
-
-## Install on Raspberry Pi (recommended)
-
-One-time setup on the Pi (Twister OS / Raspberry Pi OS):
+One-time setup on the Pi (Twister OS / Raspberry Pi OS) — **use this, not pip**:
 
 ```bash
-./install-pi.sh
+sudo apt install -y python3-venv   # only if the installer says it's missing
+bash install-pi.sh
 ```
 
-This creates a dedicated virtual environment, installs pygame-ce and numpy,
+The installer creates a dedicated virtual environment (so no PEP 668
+"externally managed environment" errors), installs pygame-ce and numpy,
 generates the game icon, and adds a launcher — find the game under
 **Menu > Games > Fierce Monster Hunter**, plus a shortcut on the desktop.
 Saves live in `~/.local/share/fierce-monster-hunter/saves` and are untouched
-by `./install-pi.sh --uninstall`.
+by `bash install-pi.sh --uninstall`.
+
+### Troubleshooting
+
+- **"externally managed environment" from pip**: Raspberry Pi OS (Bookworm+)
+marks the system Python as externally managed. Don't install system-wide —
+run `bash install-pi.sh` (or `--break-system-packages` only as a last resort).
+- **"unsupported file given on command line" or `$'\r': command not found`**:
+the script file was mangled in transit (CRLF line endings). Fix with
+`sed -i 's/\r$//' install-pi.sh && bash install-pi.sh`, or re-clone:
+`git clone https://github.com/kylemcspecial/shilohgame.git && cd shilohgame`.
+- **venv creation fails**: `sudo apt install -y python3-venv`, then rerun the
+installer.
+
+## Run (other systems)
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python main.py
+```
 
 - Arrows / WASD: move
 - Z / Space: confirm
