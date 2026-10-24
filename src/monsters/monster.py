@@ -41,6 +41,7 @@ class Monster:
         self.speed = base["speed"] + level // 2
         self.special = base["special"] + level // 2
         self.hp = self.max_hp
+        self.xp = 0
         self.moves = [
             {"id": move_id, "data": dict(move_table[move_id]), "pp": move_table[move_id]["pp"]}
             for move_id in self.species["moves"]

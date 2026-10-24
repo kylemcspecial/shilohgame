@@ -8,8 +8,9 @@ from ..engine import input as input_mod
 from ..battle import battle as battle_mod
 from ..battle import catch as catch_mod
 from ..monsters.monster import Monster, load_species, load_moves, load_type_chart
+from ..monsters import leveling
 
-_MENU = ("Fight", "Catch", "Run")
+_MENU = ("Fight", "Catch", "Switch", "Run")
 _TRAP_MENU_ITEMS = ["Basic Trap", "Stout Trap", "High Trap", "Ultra Trap"]
 
 
@@ -33,6 +34,10 @@ class BattleScene:
         self.trap_menu = False
         self.trap_index = 0
         self.shake_timer = 0.0
+        self.party = list(getattr(game.world, "party", [player_monster]))
+        self.switch_menu = False
+        self.switch_index = 0
+        self.force_switch = False
 
     # ------------------------------------------------------------------ input
 
@@ -42,6 +47,24 @@ class BattleScene:
             return
 
         pressed = self.game.input.pressed
+        if self.force_switch and not self.switch_menu:
+            self.switch_menu = True
+            self.switch_index = 0
+            return
+        if self.switch_menu:
+            living = self._switchable()
+            if not living:
+                self.switch_menu = False
+                self.force_switch = False
+            elif input_mod.UP in pressed or input_mod.LEFT in pressed:
+                self.switch_index = (self.switch_index - 1) % len(living)
+            elif input_mod.DOWN in pressed or input_mod.RIGHT in pressed:
+                self.switch_index = (self.switch_index + 1) % len(living)
+            elif input_mod.CONFIRM in pressed:
+                self._do_switch(living[self.switch_index])
+            elif input_mod.CANCEL in pressed and not self.force_switch:
+                self.switch_menu = False
+            return
         if self.trap_menu:
             available = self.inventory.traps()
             if not available:
@@ -78,6 +101,15 @@ class BattleScene:
     def _choose(self, command):
         if command == "Run":
             self._try_run()
+            return
+        if command == "Switch":
+            living = [m for m in self.party if not m.fainted and m is not self.player_mon]
+            if not living:
+                self.messages.append("No other monsters to send out!")
+                self.message_index = len(self.messages) - 1
+                return
+            self.switch_menu = True
+            self.switch_index = 0
             return
         if command == "Catch":
             if not self.inventory.traps():
@@ -144,6 +176,25 @@ class BattleScene:
         usable = self.enemy_mon.usable_moves()
         return usable[0] if usable else None
 
+    def _switchable(self):
+        return [m for m in self.party if not m.fainted and m is not self.player_mon]
+
+    def _next_living_party_member(self):
+        for m in self.party:
+            if not m.fainted and m is not self.player_mon:
+                return m
+        return None
+
+    def _do_switch(self, new_mon):
+        """Switch active monster; switching always goes before the enemy attack."""
+        self.player_mon = new_mon
+        self.switch_menu = False
+        self.force_switch = False
+        self.messages.append(f"Go, {new_mon.name}!")
+        self.message_index = len(self.messages) - 1
+        if not self.finished and not self.player_mon.fainted and not self.enemy_mon.fainted:
+            self._enemy_free_attack()
+
     def _try_run(self):
         if battle_mod.run_chance(self.player_mon, self.enemy_mon):
             self.messages.append("Got away safely!")
@@ -167,10 +218,23 @@ class BattleScene:
     def _check_outcome(self):
         if self.enemy_mon.fainted:
             self.messages.append(f"The wild {self.enemy_mon.name} fainted!")
+            xp = leveling.xp_for_defeat(self.enemy_mon.level, self.enemy_mon.species["tier"])
+            events = leveling.grant_xp(self.player_mon, xp)
+            for event in events:
+                if event["type"] == "level_up":
+                    self.messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
+                elif event["type"] == "learned_move":
+                    move_name = load_moves()[event["move"]]["name"]
+                    self.messages.append(f"{self.player_mon.name} learned {move_name}!")
             self.messages.append("You won the battle!")
             self.outcome = "won"
             self.finished = True
         elif self.player_mon.fainted:
+            if self._next_living_party_member() is not None:
+                self.messages.append(f"{self.player_mon.name} fainted!")
+                self.messages.append("Send out another monster?")
+                self.force_switch = True
+                return
             self.messages.append(f"{self.player_mon.name} fainted!")
             self.messages.append("You hurried back home...")
             self.outcome = "lost"
@@ -190,7 +254,9 @@ class BattleScene:
         self._draw_hp_box(surface, self.player_mon, (4, SCREEN_H - 88))
         self._draw_message(surface)
         if not self.finished and self.message_index >= len(self.messages) - 1:
-            if self.trap_menu:
+            if self.switch_menu:
+                self._draw_switch_menu(surface)
+            elif self.trap_menu:
                 self._draw_trap_menu(surface)
             else:
                 self._draw_menu(surface)
@@ -254,6 +320,24 @@ class BattleScene:
                     [(rect.x + 3, y + 4), (rect.x + 8, y + 7), (rect.x + 3, y + 10)],
                 )
 
+    def _draw_switch_menu(self, surface):
+        living = self._switchable()
+        if not living:
+            return
+        row_h = 11
+        rect = pygame.Rect(4, 20, 100, row_h * len(living) + 2)
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        for i, mon in enumerate(living):
+            label = self.font.render(f"{mon.name} L{mon.level}", False, WHITE, BLACK)
+            y = rect.y + 1 + i * row_h
+            surface.blit(label, (rect.x + 10, y))
+            if i == self.switch_index:
+                pygame.draw.polygon(
+                    surface, WHITE,
+                    [(rect.x + 3, y + 4), (rect.x + 8, y + 7), (rect.x + 3, y + 10)],
+                )
+
     def _draw_trap_menu(self, surface):
         available = self.inventory.traps()
         rect = pygame.Rect(SCREEN_W - 84, SCREEN_H - 26 - 11 * len(available), 84, 11 * len(available) + 2)
@@ -291,6 +375,10 @@ _MON_COLORS = {
     "stone": (150, 140, 120),
     "ember": (240, 120, 60),
 }
+
+
+def move_name(move_id):
+    return load_moves()[move_id]["name"]
 
 
 def _darken(color):

@@ -35,6 +35,8 @@ class WorldScene:
         self.paused = False
         self.font = pygame.font.Font(pygame.font.get_default_font(), 8)
         self.zone_banner_timer = 2.0
+        self.party_menu = False
+        self.party_index = 0
         self.encounters = EncounterTracker(ENCOUNTER_RATE)
         self.inventory = Inventory({"basic_trap": 5, "potion_s": 3, "berry": 2})
         species_table = load_species()
@@ -58,6 +60,8 @@ class WorldScene:
         if self.game.scene is not self:
             return
         self.paused = not self.paused
+        self.party_menu = False
+        self.party_index = 0
 
     def _on_step(self):
         """Called each time the player finishes a step onto a new tile."""
@@ -79,6 +83,7 @@ class WorldScene:
 
     def update(self, dt):
         if self.paused:
+            self._update_pause_menu()
             return
         was_moving = self.player.moving
         self.player.update(dt, self.tile_map, self.game.input.held)
@@ -133,3 +138,42 @@ class WorldScene:
         surface.blit(title, (rect.centerx - title.get_width() // 2, 50))
         hint = self.font.render("Esc to resume", False, WHITE, BLACK)
         surface.blit(hint, (rect.centerx - hint.get_width() // 2, 90))
+        if self.party_menu:
+            self._draw_party(surface)
+
+    def _draw_party(self, surface):
+        """Party list in the pause menu; confirm swaps to the front slot."""
+        rect = pygame.Rect(8, 8, SCREEN_W - 16, 11 * len(self.party) + 4)
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        for i, mon in enumerate(self.party):
+            hp = f"{mon.hp}/{mon.max_hp}"
+            label = self.font.render(f"{mon.name} L{mon.level} {hp}", False, WHITE, BLACK)
+            y = rect.y + 2 + i * 11
+            surface.blit(label, (rect.x + 10, y))
+            if i == self.party_index:
+                pygame.draw.polygon(
+                    surface, WHITE,
+                    [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
+                )
+
+    def _update_pause_menu(self):
+        """Handle input while the pause menu is open."""
+        pressed = self.game.input.pressed
+        if self.party_menu:
+            if input_mod.UP in pressed:
+                self.party_index = (self.party_index - 1) % len(self.party)
+            elif input_mod.DOWN in pressed:
+                self.party_index = (self.party_index + 1) % len(self.party)
+            elif input_mod.CONFIRM in pressed and len(self.party) > 1:
+                self.party[0], self.party[self.party_index] = (
+                    self.party[self.party_index], self.party[0],
+                )
+                self.party_index = 0
+            elif input_mod.CANCEL in pressed:
+                self.party_menu = False
+            return
+        if input_mod.CONFIRM in pressed:
+            self.party_menu = True
+            self.party_index = 0
+

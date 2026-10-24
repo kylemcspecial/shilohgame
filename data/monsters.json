@@ -2,59 +2,180 @@
   "species": {
     "fernpup": {
       "name": "Fernpup",
-      "types": ["leaf"],
+      "types": [
+        "leaf"
+      ],
       "tier": 2,
-      "base_stats": {"hp": 22, "attack": 9, "defense": 8, "speed": 9, "special": 7},
-      "moves": ["tackle", "brace"]
+      "base_stats": {
+        "hp": 22,
+        "attack": 9,
+        "defense": 8,
+        "speed": 9,
+        "special": 7
+      },
+      "moves": [
+        "tackle",
+        "brace"
+      ],
+      "move_pool": {
+        "4": "leaf_rip",
+        "8": "brace",
+        "12": "ember_swipe"
+      }
     },
     "mossrat": {
       "name": "Mossrat",
-      "types": ["leaf"],
+      "types": [
+        "leaf"
+      ],
       "tier": 1,
-      "base_stats": {"hp": 18, "attack": 7, "defense": 6, "speed": 8, "special": 5},
-      "moves": ["tackle", "brace"]
+      "base_stats": {
+        "hp": 18,
+        "attack": 7,
+        "defense": 6,
+        "speed": 8,
+        "special": 5
+      },
+      "moves": [
+        "tackle",
+        "brace"
+      ],
+      "move_pool": {
+        "5": "leaf_rip",
+        "10": "stone_toss"
+      }
     },
     "brookfin": {
       "name": "Brookfin",
-      "types": ["water"],
+      "types": [
+        "water"
+      ],
       "tier": 1,
-      "base_stats": {"hp": 19, "attack": 8, "defense": 7, "speed": 7, "special": 6},
-      "moves": ["splash_lash", "brace"]
+      "base_stats": {
+        "hp": 19,
+        "attack": 8,
+        "defense": 7,
+        "speed": 7,
+        "special": 6
+      },
+      "moves": [
+        "splash_lash",
+        "brace"
+      ],
+      "move_pool": {
+        "6": "frost_nip",
+        "11": "splash_lash"
+      }
     },
     "thornbear": {
       "name": "Thornbear",
-      "types": ["leaf"],
+      "types": [
+        "leaf"
+      ],
       "tier": 2,
-      "base_stats": {"hp": 25, "attack": 10, "defense": 9, "speed": 6, "special": 7},
-      "moves": ["leaf_rip", "brace"]
+      "base_stats": {
+        "hp": 25,
+        "attack": 10,
+        "defense": 9,
+        "speed": 6,
+        "special": 7
+      },
+      "moves": [
+        "leaf_rip",
+        "brace"
+      ],
+      "move_pool": {
+        "7": "stone_toss",
+        "13": "ember_swipe"
+      }
     },
     "fangmoth": {
       "name": "Fangmoth",
-      "types": ["storm"],
+      "types": [
+        "storm"
+      ],
       "tier": 2,
-      "base_stats": {"hp": 20, "attack": 11, "defense": 6, "speed": 11, "special": 8},
-      "moves": ["static_bite", "brace"]
+      "base_stats": {
+        "hp": 20,
+        "attack": 11,
+        "defense": 6,
+        "speed": 11,
+        "special": 8
+      },
+      "moves": [
+        "static_bite",
+        "brace"
+      ],
+      "move_pool": {
+        "6": "static_bite",
+        "12": "frost_nip"
+      }
     },
     "emberlynx": {
       "name": "Ember Lynx",
-      "types": ["ember"],
+      "types": [
+        "ember"
+      ],
       "tier": 3,
-      "base_stats": {"hp": 23, "attack": 12, "defense": 8, "speed": 12, "special": 9},
-      "moves": ["ember_swipe", "brace"]
+      "base_stats": {
+        "hp": 23,
+        "attack": 12,
+        "defense": 8,
+        "speed": 12,
+        "special": 9
+      },
+      "moves": [
+        "ember_swipe",
+        "brace"
+      ],
+      "move_pool": {
+        "8": "ember_swipe",
+        "14": "leaf_rip"
+      }
     },
     "stonewyrm": {
       "name": "Stonewyrm",
-      "types": ["stone"],
+      "types": [
+        "stone"
+      ],
       "tier": 3,
-      "base_stats": {"hp": 28, "attack": 11, "defense": 12, "speed": 5, "special": 7},
-      "moves": ["stone_toss", "brace"]
+      "base_stats": {
+        "hp": 28,
+        "attack": 11,
+        "defense": 12,
+        "speed": 5,
+        "special": 7
+      },
+      "moves": [
+        "stone_toss",
+        "brace"
+      ],
+      "move_pool": {
+        "9": "stone_toss",
+        "15": "ember_swipe"
+      }
     },
     "frostpaw": {
       "name": "Frostpaw",
-      "types": ["frost"],
+      "types": [
+        "frost"
+      ],
       "tier": 3,
-      "base_stats": {"hp": 22, "attack": 10, "defense": 9, "speed": 10, "special": 9},
-      "moves": ["frost_nip", "brace"]
+      "base_stats": {
+        "hp": 22,
+        "attack": 10,
+        "defense": 9,
+        "speed": 10,
+        "special": 9
+      },
+      "moves": [
+        "frost_nip",
+        "brace"
+      ],
+      "move_pool": {
+        "7": "frost_nip",
+        "13": "splash_lash"
+      }
     }
   }
 }

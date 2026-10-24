@@ -22,7 +22,7 @@ python main.py
 - [x] Milestone 1: Window, integer scaling, input, walkable home base (Hunter's Rest)
 - [x] Milestone 2: Random encounters in Whispering Pines + basic battle
 - [x] Milestone 3: Catching with traps
-- [ ] Milestone 4: Leveling, moves, party, storage
+- [x] Milestone 4: Leveling, moves, party, storage
 - [ ] Milestone 5: Healing Lodge, fainting, save/load
 - [ ] Milestone 6: Trainers, Emmett arc, zones and towns
 - [ ] Milestone 7: Evolution, types, full roster, endless loop
