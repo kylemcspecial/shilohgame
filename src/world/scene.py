@@ -42,6 +42,8 @@ class WorldScene:
         self.save_menu = False
         self.save_index = 0
         self.card_menu = False
+        self.shop_menu = False
+        self.shop_index = 0
         self.trainer_state = TrainerState()
         self.trainers_data = load_trainers()
         self.encounters = EncounterTracker(ENCOUNTER_RATE)
@@ -70,6 +72,11 @@ class WorldScene:
     def zone_name(self):
         return self.zones[self.zone_id]["name"]
 
+    @property
+    def player_level(self):
+        """Player level from battles won (spec 6.5): 1 level per 2 wins, capped at 50."""
+        return min(50, 1 + self.battles_won // 2)
+
     def toggle_pause(self):
         if self.game.scene is not self:
             return
@@ -79,30 +86,107 @@ class WorldScene:
         self.save_menu = False
         self.card_menu = False
         self.pause_index = 0
+        if self.shop_menu and self.paused:
+            self.shop_menu = False
+
+    _SHOP_ITEMS = ("basic_trap", "stout_trap", "high_trap", "ultra_trap")
 
     def _open_shop(self):
-        """Face the Trap Shop and confirm to buy a Basic Trap (20 coins)."""
-        if self.coins >= 20:
-            self.coins -= 20
-            self.inventory.add("basic_trap")
-            self._flash("Bought a Basic Trap! (20 coins)")
-        else:
-            self._flash("Not enough coins for a trap!")
+        """Open the Trap Shop menu (items gated by player level, spec 7.2)."""
+        self.shop_menu = True
+        self.shop_index = 0
+
+    def _shop_available(self):
+        """Shop entries unlocked at the player's level, with prices."""
+        from ..items.inventory import load_items
+
+        items = load_items()
+        unlocks = self._load_trap_unlocks()
+        entries = []
+        for item_id in self._SHOP_ITEMS:
+            item = items[item_id]
+            unlock = unlocks.get(item_id, 1)
+            entries.append({
+                "id": item_id,
+                "name": item["name"],
+                "cost": item["cost"],
+                "unlocked": self.player_level >= unlock,
+                "unlock_level": unlock,
+            })
+        return entries
+
+    @staticmethod
+    def _load_trap_unlocks():
+        import json as _json
+
+        with open(os.path.join(_DATA_DIR, "items.json")) as f:
+            return _json.load(f)["trap_unlocks"]
+
+    def _buy(self, entry):
+        if not entry["unlocked"]:
+            self._flash(f"{entry['name']} unlocks at level {entry['unlock_level']}!")
+            return
+        if self.coins < entry["cost"]:
+            self._flash("Not enough coins!")
+            return
+        self.coins -= entry["cost"]
+        self.inventory.add(entry["id"])
+        self.game.audio.confirm()
+        self._flash(f"Bought a {entry['name']}! ({entry['cost']} coins)")
+
+    def _update_shop_menu(self):
+        pressed = self.game.input.pressed
+        entries = self._shop_available()
+        if input_mod.UP in pressed:
+            self.shop_index = (self.shop_index - 1) % len(entries)
+        elif input_mod.DOWN in pressed:
+            self.shop_index = (self.shop_index + 1) % len(entries)
+        elif input_mod.CONFIRM in pressed:
+            self._buy(entries[self.shop_index])
+            self.shop_menu = False
+        elif input_mod.CANCEL in pressed:
+            self.shop_menu = False
+
+    def _draw_shop(self, surface):
+        """Trap Shop list with prices and lock levels (spec 7.2)."""
+        entries = self._shop_available()
+        row_h = 14
+        rect = pygame.Rect(30, 14, SCREEN_W - 60, row_h * len(entries) + 16)
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        title = self.font.render("TRAP SHOP", False, WHITE, BLACK)
+        surface.blit(title, (rect.centerx - title.get_width() // 2, rect.y + 3))
+        for i, entry in enumerate(entries):
+            y = rect.y + 14 + i * row_h
+            status = f"{entry['cost']}c" if entry["unlocked"] else f"Lv{entry['unlock_level']}"
+            color = WHITE if entry["unlocked"] else (120, 120, 120)
+            label = self.font.render(f"{entry['name']} {status}", False, color, BLACK)
+            surface.blit(label, (rect.x + 10, y))
+            if i == self.shop_index:
+                pygame.draw.polygon(
+                    surface, WHITE,
+                    [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
+                )
+
+    def _save_or_pick_slot(self, message):
+        """Save to the current slot, or the first free slot on a fresh game."""
+        from ..save import save_game, load_game, SLOT_COUNT
+
+        if self.save_slot is None:
+            self.save_slot = next(
+                (slot for slot in range(SLOT_COUNT) if load_game(slot) is None), 0
+            )
+        save_game(self, self.save_slot)
+        self._flash(f"{message} (Slot {self.save_slot + 1})")
 
     def _heal_party(self):
-        """Full party heal, free, and auto-save to the current slot."""
-        from ..save import save_game
-
+        """Full party heal, free, and auto-save (spec 10: lodge always saves)."""
         for mon in self.party + self.storage:
             mon.hp = mon.max_hp
             for mv in mon.moves:
                 mv["pp"] = mv["data"]["pp"]
         self.game.audio.heal()
-        if self.save_slot is not None:
-            save_game(self, self.save_slot)
-            self._flash("Your monsters are fully healed! Game saved.")
-        else:
-            self._flash("Your monsters are fully healed! (Save from the pause menu first.)")
+        self._save_or_pick_slot("Your monsters are fully healed! Game saved.")
 
     def _flash(self, text):
         self.message = text
@@ -136,6 +220,8 @@ class WorldScene:
             return
         zone = self.zones[self.zone_id]
         self._check_trainer_sight()
+        if self.game.scene is not self:
+            return  # a trainer battle started; don't roll a wild encounter over it
         if "encounters" in zone and self.tile_map.is_tall_grass(
             self.player.tile_x, self.player.tile_y
         ):
@@ -194,15 +280,12 @@ class WorldScene:
         elif self.tile_map.tile_at(tx, ty) == "S":
             self._open_shop()
         elif self.tile_map.tile_at(tx, ty) == "#":
-            from ..save import save_game
-
-            if self.save_slot is not None:
-                save_game(self, self.save_slot)
-                self._flash("You rested at home. Game saved!")
-            else:
-                self._flash("Home sweet home!")
+            self._save_or_pick_slot("You rested at home. Game saved!")
 
     def update(self, dt):
+        if self.shop_menu:
+            self._update_shop_menu()
+            return
         if self.paused:
             self._update_pause_menu()
             return
@@ -240,14 +323,30 @@ class WorldScene:
                 surface.blit(tile, (tx * TILE_SIZE - cam_x, ty * TILE_SIZE - cam_y))
 
         self.player.draw(surface, cam_x, cam_y)
+        self._draw_trainers(surface, cam_x, cam_y)
         self._draw_hud(surface)
 
         if self.zone_banner_timer > 0:
             self._draw_banner(surface, self.zone_name)
         if self.message:
             self._draw_flash(surface)
+        if self.shop_menu:
+            self._draw_shop(surface)
         if self.paused:
             self._draw_pause(surface)
+
+    def _draw_trainers(self, surface, cam_x, cam_y):
+        """Draw a marker at each trainer's tile so challenges are visible."""
+        for tid, trainer in trainers_in_zone(self.zone_id):
+            x = trainer["x"] * TILE_SIZE - cam_x
+            y = trainer["y"] * TILE_SIZE - cam_y
+            if not self.trainer_state.defeated.get(tid):
+                color = (200, 60, 60) if trainer.get("rival") else (230, 160, 60)
+            else:
+                color = (110, 110, 110)
+            pygame.draw.rect(surface, color, (x + 4, y + 2, 8, 5))
+            pygame.draw.rect(surface, (90, 90, 160), (x + 5, y + 7, 6, 6))
+            pygame.draw.circle(surface, (255, 220, 180), (x + 8, y + 3), 2)
 
     def _draw_hud(self, surface):
         label = self.font.render(self.zone_name, False, WHITE, BLACK)

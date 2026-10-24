@@ -97,4 +97,4 @@ def test_levelup_message_uses_pre_evolution_name(tmp_path):
 
 def test_save_menu_no_unused_import_regression(tmp_path):
     src = open("src/world/scene.py").read()
-    assert "load_game, SLOT_COUNT" not in src
+    assert "from ..save import save_game, load_game, SLOT_COUNT" in src  # all used now

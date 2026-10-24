@@ -28,16 +28,21 @@ class TrainerState:
         if last is None:
             # Defeated but no timer (e.g. restored from an older save):
             # start the cooldown now rather than allowing an instant rematch.
-            self.last_battled[trainer_id] = time.monotonic()
+            self.last_battled[trainer_id] = self._now()
             return False
-        return (time.monotonic() - last) >= REBATTLE_COOLDOWN
+        return (self._now() - last) >= REBATTLE_COOLDOWN
 
     def record_win(self, trainer_id):
         self.defeated[trainer_id] = True
-        self.last_battled[trainer_id] = time.monotonic()
+        self.last_battled[trainer_id] = self._now()
 
     def record_start(self, trainer_id):
-        self.last_battled[trainer_id] = time.monotonic()
+        self.last_battled[trainer_id] = self._now()
+
+    @staticmethod
+    def _now():
+        """Wall clock so persisted cooldowns stay valid across reboots."""
+        return time.time()
 
 
 def trainers_in_zone(zone_id):

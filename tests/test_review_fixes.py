@@ -73,7 +73,7 @@ def test_turn_messages_step_through(tmp_path):
     battle = BattleScene(game, mon("fernpup", 5), mon("brookfin", 3))
     battle.intro_timer = 0
     battle.messages = ["intro"]
-    battle.message_index = 0
+    battle._read = len(battle.messages) - 1  # intro confirmed
     battle._choose("Fight")
     assert len(battle.messages) >= 3
     assert battle.message_index == 1  # first NEW message, not the last
@@ -84,7 +84,7 @@ def test_effectiveness_message_reachable(tmp_path):
     battle = BattleScene(game, mon("fernpup", 5), mon("brookfin", 3))
     battle.intro_timer = 0
     battle.messages = ["intro"]
-    battle.message_index = 0
+    battle._read = len(battle.messages) - 1
     battle._choose("Fight")  # leaf vs water: super effective
     texts = battle.messages
     assert any("super effective" in t for t in texts)
@@ -127,10 +127,11 @@ def test_lodge_message_honest_about_saving(tmp_path):
     world.player.facing = "up"
     world._interact()
     assert "healed" in world.message
-    assert "saved" not in world.message
-    world.save_slot = 0
-    world._interact()
-    assert "saved" in world.message
+    assert "saved" in world.message  # lodge now picks a free slot and saves (PR review fix)
+    from src.save import load_game
+
+    assert load_game(world.save_slot) is not None
+    assert world.save_slot == 0
 
 
 # ---------------------------------------------------------------------------

@@ -77,6 +77,22 @@ def _validate(data):
         raise TypeError("player")
     if "tile_x" not in data["player"] or "tile_y" not in data["player"]:
         raise KeyError("player coords")
+    from ..monsters.monster import load_species, load_moves
+    from ..world.scene import load_zones
+
+    species, moves = load_species(), load_moves()
+    if data["zone_id"] not in load_zones()["zones"]:
+        raise ValueError("zone_id")
+    for entry in data["party"] + data.get("storage", []):
+        if not isinstance(entry, dict):
+            raise TypeError("monster entry")
+        if entry.get("species_id") not in species:
+            raise ValueError("species_id")
+        if not isinstance(entry.get("level", 0), int) or entry["level"] < 1:
+            raise ValueError("level")
+        for mv in entry.get("moves", []):
+            if not isinstance(mv, dict) or mv.get("id") not in moves:
+                raise ValueError("move id")
 
 
 def restore_monsters(data, monster_tables=None):
@@ -95,10 +111,22 @@ def _restore_monster(entry, species_table, move_table):
 
     mon = Monster(entry["species_id"], entry["level"], species_table, move_table)
     mon.xp = entry.get("xp", 0)
-    for saved in entry.get("moves", []):
-        for mv in mon.moves:
-            if mv["id"] == saved["id"]:
-                mv["pp"] = saved.get("pp", mv["pp"])
+    saved_moves = entry.get("moves")
+    if saved_moves:
+        # Rebuild the moveset from saved IDs so learned moves survive loading.
+        restored = []
+        for saved in saved_moves:
+            move_id = saved["id"]
+            if move_id not in move_table:
+                continue
+            fresh = dict(move_table[move_id])
+            restored.append({
+                "id": move_id,
+                "data": fresh,
+                "pp": max(0, min(saved.get("pp", fresh["pp"]), fresh["pp"])),
+            })
+        if restored:
+            mon.moves = restored
     mon.hp = min(mon.max_hp, max(0, entry.get("hp", mon.max_hp)))
     return mon
 

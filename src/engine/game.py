@@ -66,8 +66,10 @@ class Game:
     def quit(self):
         self.running = False
 
-    def run(self):
+    def run(self, title=True):
         try:
+            if title:
+                self._run_title_loop()
             while self.running:
                 events = pygame.event.get()
                 for event in events:
@@ -87,8 +89,61 @@ class Game:
 
                 pygame.transform.scale(self.buffer, self.screen.get_size(), self.screen)
                 pygame.display.flip()
+
+                if getattr(self.scene, "exit_to_title", False):
+                    self._run_title_loop()
         finally:
             pygame.quit()
+
+    def _run_title_loop(self):
+        """Show the main menu until New Game/Continue/Quit is chosen."""
+        from ..ui.main_menu import MainMenuScene
+
+        menu = MainMenuScene(self)
+        while self.running and not menu.done:
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.quit()
+                    return
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                    self.toggle_fullscreen()
+
+            self.input.update(events)
+            dt = self.clock.tick(FPS) / 1000.0
+            menu.update(dt)
+            menu.draw(self.buffer)
+
+            pygame.transform.scale(self.buffer, self.screen.get_size(), self.screen)
+            pygame.display.flip()
+
+            if menu.action == "quit":
+                self.quit()
+                return
+
+        if menu.action == "new":
+            self._new_game()
+        elif isinstance(menu.action, tuple) and menu.action[0] == "load":
+            self._load_game(menu.action[1])
+
+    def _new_game(self):
+        """Fresh world, back to the game loop."""
+        from ..world.scene import WorldScene
+
+        self.world = WorldScene(self)
+        self.scene = self.world
+        self.world.save_slot = None
+
+    def _load_game(self, slot):
+        from ..save import load_game, apply_save
+
+        data = load_game(slot)
+        if data is None:
+            self._new_game()
+            return
+        apply_save(self.world, data)
+        self.world.save_slot = slot
+        self.scene = self.world
 
 
 def main():

@@ -14,14 +14,22 @@ try:
 except ImportError:
     _np = None
 
-_SAMPLE_RATE = 22050
+_DEFAULT_SAMPLE_RATE = 22050
+
+
+def _mixer_rate():
+    init = pygame.mixer.get_init()
+    if init:
+        return init[0]
+    return _DEFAULT_SAMPLE_RATE
 
 
 def _tone_samples(freq, duration, volume, wave="square"):
-    n = int(_SAMPLE_RATE * duration)
+    rate = _mixer_rate()
+    n = int(rate * duration)
     if _np is None or n <= 0:
         return None
-    t = _np.arange(n) / _SAMPLE_RATE
+    t = _np.arange(n) / rate
     if wave == "square":
         samples = _np.sign(_np.sin(2 * math.pi * freq * t))
     else:
@@ -49,7 +57,7 @@ class Audio:
         if pygame.mixer.get_init():
             return True
         try:
-            pygame.mixer.init(frequency=_SAMPLE_RATE, size=-16, channels=2, buffer=512)
+            pygame.mixer.init(frequency=_DEFAULT_SAMPLE_RATE, size=-16, channels=2, buffer=512)
             return True
         except pygame.error:
             return False

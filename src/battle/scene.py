@@ -25,7 +25,7 @@ class BattleScene:
         self.font = pygame.font.Font(pygame.font.get_default_font(), 8)
         self.menu_index = 0
         self.messages = [f"A wild {enemy_monster.name} appeared!"]
-        self.message_index = 0
+        self._read = 0
         self.finished = False
         self.outcome = None
         self.intro_timer = 1.0
@@ -39,11 +39,25 @@ class BattleScene:
         self.force_switch = False
 
     def _append_messages(self, new_messages):
-        """Append messages and show the first new one; CONFIRM steps through the rest."""
+        """Append messages; the display always shows the first unread line.
+
+        `self._read` counts messages the player has stepped through, so
+        appending never skips anything: each line waits for a confirm.
+        """
         if not new_messages:
             return
         self.messages.extend(new_messages)
-        self.message_index = len(self.messages) - len(new_messages)
+
+    @property
+    def message_index(self):
+        """Index of the first unread message; the last one once all are read."""
+        return min(self._read + 1, len(self.messages) - 1)
+
+    def _advance_message(self):
+        if self.message_index < len(self.messages) - 1:
+            self._read += 1
+            return True
+        return False
 
     def _xp_messages(self, xp):
         """Apply XP and build level-up/evolution/learned-move messages."""
@@ -73,6 +87,11 @@ class BattleScene:
             return
 
         pressed = self.game.input.pressed
+        has_pending = self.message_index < len(self.messages) - 1
+        if has_pending:
+            if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
+                self._advance_message()
+            return
         if self.force_switch and not self.switch_menu:
             self.switch_menu = True
             self.switch_index = 0
@@ -104,11 +123,6 @@ class BattleScene:
             elif input_mod.CANCEL in pressed:
                 self.trap_menu = False
             return
-        if self.message_index < len(self.messages) - 1:
-            if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
-                self.message_index += 1
-            return
-
         if self.finished:
             if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
                 self.game.end_battle()
@@ -281,13 +295,15 @@ class BattleScene:
         self._draw_hp_box(surface, self.enemy_mon, (SCREEN_W - 92, 46))
         self._draw_hp_box(surface, self.player_mon, (4, SCREEN_H - 88))
         self._draw_message(surface)
-        if not self.finished and self.message_index >= len(self.messages) - 1:
+        if self.finished:
+            return
+        if self.switch_menu or self.trap_menu:
             if self.switch_menu:
                 self._draw_switch_menu(surface)
-            elif self.trap_menu:
-                self._draw_trap_menu(surface)
             else:
-                self._draw_menu(surface)
+                self._draw_trap_menu(surface)
+        elif self.message_index >= len(self.messages) - 1:
+            self._draw_menu(surface)
 
     def _draw_intro(self, surface):
         label = self.font.render("A wild monster draws near!", False, WHITE, BLACK)
@@ -331,13 +347,16 @@ class BattleScene:
             surface.blit(label, (rect.x + 4, rect.y + 4 + i * 10))
 
     def _draw_menu(self, surface):
-        rect = pygame.Rect(SCREEN_W - 64, SCREEN_H - 26, 64, 37)
+        row_h = 11
+        height = row_h * len(_MENU) + 3
+        rect = pygame.Rect(SCREEN_W - 64, SCREEN_H - 26 - (height - 26), 64, height)
+        rect.y = SCREEN_H - height - 2
         pygame.draw.rect(surface, BLACK, rect)
         pygame.draw.rect(surface, WHITE, rect, 1)
         for i, option in enumerate(_MENU):
             color = WHITE
             label = self.font.render(option, False, color, BLACK)
-            y = rect.y + 2 + i * 11
+            y = rect.y + 2 + i * row_h
             surface.blit(label, (rect.x + 10, y))
             if i == self.menu_index:
                 pygame.draw.polygon(
@@ -428,7 +447,7 @@ class TrainerBattle(BattleScene):
             f"\"{trainer_data['intro']}\"",
             f"{trainer_data['name']} sent out {self.team[0].name}!",
         ]
-        self.message_index = 0
+        self._read = 0
 
     def _choose(self, command):
         if command == "Run":

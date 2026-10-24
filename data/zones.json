@@ -126,7 +126,13 @@
         "fernpup": 25,
         "brookfin": 20,
         "thornbear": 10,
-        "fangmoth": 5
+        "fangmoth": 5,
+        "chirrel": 12,
+        "dewvole": 12,
+        "gustling": 12,
+        "kindlekit": 12,
+        "chillcub": 12,
+        "pebblet": 12
       },
       "encounter_levels": [
         2,
@@ -252,7 +258,13 @@
         "fernpup": 20,
         "brookfin": 25,
         "thornbear": 15,
-        "fangmoth": 15
+        "fangmoth": 15,
+        "petalfin": 12,
+        "puddlewisp": 8,
+        "pinehog": 8,
+        "mistfrog": 8,
+        "marshpaw": 8,
+        "barkshell": 8
       },
       "encounter_levels": [
         6,
@@ -315,7 +327,13 @@
         "thornbear": 25,
         "fangmoth": 20,
         "stonewyrm": 20,
-        "frostpaw": 15
+        "frostpaw": 15,
+        "sparkit": 8,
+        "flarehound": 8,
+        "cinderpy": 8,
+        "sleetfox": 8,
+        "cragmite": 8,
+        "bramblecat": 8
       },
       "encounter_levels": [
         13,
@@ -427,7 +445,13 @@
         "thornbear": 15,
         "emberlynx": 30,
         "stonewyrm": 25,
-        "frostpaw": 30
+        "frostpaw": 30,
+        "smokeyote": 4,
+        "hailhawk": 4,
+        "shadewisp": 4,
+        "thistlefin": 4,
+        "sunlessowl": 4,
+        "emberfrog": 4
       },
       "encounter_levels": [
         23,
