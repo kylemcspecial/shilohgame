@@ -6,14 +6,29 @@ LEVEL_CAP = 50
 _XP_FORMULA_BASE = 8
 
 
-def xp_for_defeat(defeated_level, defeated_tier):
-    """XP from defeating or catching a monster, scaled by level and rarity."""
-    return int(_XP_FORMULA_BASE * defeated_level * (1.0 + 0.25 * (defeated_tier - 1)))
+def xp_for_defeat(defeated_level, defeated_tier, victor_level=None):
+    """XP from a defeat, scaled by rarity and the victor's level gap.
+
+    Fighting foes far below your level pays little: 50% at 5+ below,
+    25% at 10+ below, and nothing at 15+ below. Grinding easy zones
+    no longer levels you; fighting up stays fully rewarding.
+    """
+    base = int(_XP_FORMULA_BASE * defeated_level * (1.0 + 0.25 * (defeated_tier - 1)))
+    if victor_level is None:
+        return base
+    gap = victor_level - defeated_level
+    if gap >= 15:
+        return 0
+    if gap >= 10:
+        return base // 4
+    if gap >= 5:
+        return base // 2
+    return base
 
 
 def xp_to_next(level):
-    """Total XP needed to advance from `level` to `level + 1`."""
-    return 10 + 5 * level
+    """Superlinear XP needed to advance: early levels quick, later ones earned."""
+    return 10 + 5 * level + (level * level) // 4
 
 
 def grant_xp(monster, amount, rng=None):

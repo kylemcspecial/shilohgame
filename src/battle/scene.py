@@ -241,7 +241,9 @@ class BattleScene:
             self.game.audio.catch_success()
             self.caught_monster = self.enemy_mon
             catch_messages = [f"Gotcha! {self.enemy_mon.name} was caught!"]
-            xp = leveling.xp_for_defeat(self.enemy_mon.level, self.enemy_mon.species["tier"])
+            xp = leveling.xp_for_defeat(
+                self.enemy_mon.level, self.enemy_mon.species["tier"], self.player_mon.level
+            )
             catch_messages.extend(self._xp_messages(xp))
             self._append_messages(catch_messages)
             self.outcome = "caught"
@@ -363,7 +365,9 @@ class BattleScene:
         if self.enemy_mon.fainted:
             self.game.audio.hit()
             outcome_messages = [f"The wild {self.enemy_mon.name} fainted!"]
-            xp = leveling.xp_for_defeat(self.enemy_mon.level, self.enemy_mon.species["tier"])
+            xp = leveling.xp_for_defeat(
+                self.enemy_mon.level, self.enemy_mon.species["tier"], self.player_mon.level
+            )
             outcome_messages.extend(self._xp_messages(xp))
             coins = 2 * self.enemy_mon.level + 3 * (self.enemy_mon.species["tier"] - 1)
             outcome_messages.append(f"You found {coins} coins!")
@@ -586,12 +590,28 @@ class TrainerBattle(BattleScene):
         from ..monsters.monster import Monster, load_species, load_moves
 
         species, moves = load_species(), load_moves()
+        rematch = bool(trainer_data.get("leader")) and bool(
+            getattr(getattr(game, "world", None), "trainer_state", None)
+            and game.world.trainer_state.defeated.get(trainer_id)
+        )
+        level_boost = 3 if rematch else 0
         self.team = [
-            Monster(t["species"], t["level"], species, moves) for t in trainer_data["team"]
+            Monster(t["species"], min(50, t["level"] + level_boost), species, moves)
+            for t in trainer_data["team"]
         ]
         super().__init__(game, player_monster, self.team[0], inventory=inventory)
         self.trainer_id = trainer_id
         self.trainer = trainer_data
+        if trainer_data.get("rival"):
+            rival_name = getattr(getattr(game, "world", None), "rival_name", None) or "Emmett"
+            trainer_data = dict(trainer_data)
+            trainer_data["name"] = rival_name
+            trainer_data["intro"] = trainer_data["intro"].replace("squirt", "friend")
+            trainer_data["defeat"] = trainer_data["defeat"].replace("squirt", "friend")
+            self.trainer = trainer_data
+        self.badge_won = trainer_data.get("badge") if trainer_data.get("leader") else None
+        if rematch:
+            self.badge_won = None  # badge already earned; rematch is for XP
         self.messages = [
             f"{trainer_data['name']} wants to battle!",
             f"\"{trainer_data['intro']}\"",
@@ -622,8 +642,12 @@ class TrainerBattle(BattleScene):
                 return
             from ..monsters import leveling
 
-            xp = sum(
-                leveling.xp_for_defeat(m.level, m.species["tier"]) for m in self.team
+            strongest = max(m.level for m in self.team)
+            xp = int(
+                1.5 * leveling.xp_for_defeat(
+                    strongest, max(m.species["tier"] for m in self.team),
+                    self.player_mon.level,
+                )
             )
             outcome_messages = [f"{self.enemy_mon.name} fainted!"]
             outcome_messages.extend(self._xp_messages(xp))

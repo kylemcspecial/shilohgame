@@ -52,6 +52,9 @@ class Game:
                 if tid is not None:
                     self.world.trainer_state.record_win(tid)
                     self.world.coins += battle.trainer["reward"]
+                badge = getattr(battle, "badge_won", None)
+                if badge:
+                    self.world.on_badge_won(badge)
                 if self.world.save_slot is not None:
                     from ..save import save_game
 
@@ -131,10 +134,30 @@ class Game:
             self._load_game(menu.action[1])
 
     def _new_game(self):
-        """Fresh world, back to the game loop."""
+        """Intro (names + starter), then a fresh world."""
+        from ..ui.intro import IntroScene
         from ..world.scene import WorldScene
 
-        self.world = WorldScene(self)
+        intro = IntroScene(self)
+        while self.running and not intro.done:
+            events = pygame.event.get()
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.quit()
+                    return
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                    self.toggle_fullscreen()
+            self.input.update(events)
+            dt = self.clock.tick(FPS) / 1000.0
+            intro.update(dt)
+            intro.draw(self.buffer)
+            pygame.transform.scale(self.buffer, self.screen.get_size(), self.screen)
+            pygame.display.flip()
+        if not intro.result:
+            self.quit()
+            return
+
+        self.world = WorldScene(self, intro=intro.result)
         self.scene = self.world
         self.world.save_slot = None
 
