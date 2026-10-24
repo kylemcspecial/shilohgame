@@ -1,0 +1,12 @@
+{
+  "moves": {
+    "tackle": {"name": "Tackle", "type": "leaf", "category": "offensive", "power": 10, "accuracy": 100, "pp": 15},
+    "leaf_rip": {"name": "Leaf Rip", "type": "leaf", "category": "offensive", "power": 12, "accuracy": 100, "pp": 10},
+    "splash_lash": {"name": "Splash Lash", "type": "water", "category": "offensive", "power": 11, "accuracy": 100, "pp": 12},
+    "static_bite": {"name": "Static Bite", "type": "storm", "category": "offensive", "power": 12, "accuracy": 100, "pp": 10},
+    "frost_nip": {"name": "Frost Nip", "type": "frost", "category": "offensive", "power": 12, "accuracy": 100, "pp": 10},
+    "stone_toss": {"name": "Stone Toss", "type": "stone", "category": "offensive", "power": 14, "accuracy": 90, "pp": 8},
+    "ember_swipe": {"name": "Ember Swipe", "type": "ember", "category": "offensive", "power": 13, "accuracy": 95, "pp": 8},
+    "brace": {"name": "Brace", "type": "leaf", "category": "defensive", "effect": "raise_defense", "power": 0, "accuracy": 100, "pp": 10}
+  }
+}

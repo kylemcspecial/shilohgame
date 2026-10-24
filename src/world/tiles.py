@@ -82,6 +82,7 @@ class TileMap:
         self.height = len(rows)
         self.grid = [list(row) for row in rows]
         self.exits = zone_data.get("exits", {})
+        self.warps = list(zone_data.get("warps", []))
         self.player_start = None
         for y, row in enumerate(self.grid):
             for x, char in enumerate(row):
@@ -101,3 +102,9 @@ class TileMap:
 
     def is_door(self, tx, ty):
         return self.tile_at(tx, ty) == "D"
+
+    def warp_at(self, tx, ty):
+        for warp in self.warps:
+            if warp["x"] == tx and warp["y"] == ty:
+                return warp
+        return None

@@ -1,0 +1,60 @@
+{
+  "species": {
+    "fernpup": {
+      "name": "Fernpup",
+      "types": ["leaf"],
+      "tier": 2,
+      "base_stats": {"hp": 22, "attack": 9, "defense": 8, "speed": 9, "special": 7},
+      "moves": ["tackle", "brace"]
+    },
+    "mossrat": {
+      "name": "Mossrat",
+      "types": ["leaf"],
+      "tier": 1,
+      "base_stats": {"hp": 18, "attack": 7, "defense": 6, "speed": 8, "special": 5},
+      "moves": ["tackle", "brace"]
+    },
+    "brookfin": {
+      "name": "Brookfin",
+      "types": ["water"],
+      "tier": 1,
+      "base_stats": {"hp": 19, "attack": 8, "defense": 7, "speed": 7, "special": 6},
+      "moves": ["splash_lash", "brace"]
+    },
+    "thornbear": {
+      "name": "Thornbear",
+      "types": ["leaf"],
+      "tier": 2,
+      "base_stats": {"hp": 25, "attack": 10, "defense": 9, "speed": 6, "special": 7},
+      "moves": ["leaf_rip", "brace"]
+    },
+    "fangmoth": {
+      "name": "Fangmoth",
+      "types": ["storm"],
+      "tier": 2,
+      "base_stats": {"hp": 20, "attack": 11, "defense": 6, "speed": 11, "special": 8},
+      "moves": ["static_bite", "brace"]
+    },
+    "emberlynx": {
+      "name": "Ember Lynx",
+      "types": ["ember"],
+      "tier": 3,
+      "base_stats": {"hp": 23, "attack": 12, "defense": 8, "speed": 12, "special": 9},
+      "moves": ["ember_swipe", "brace"]
+    },
+    "stonewyrm": {
+      "name": "Stonewyrm",
+      "types": ["stone"],
+      "tier": 3,
+      "base_stats": {"hp": 28, "attack": 11, "defense": 12, "speed": 5, "special": 7},
+      "moves": ["stone_toss", "brace"]
+    },
+    "frostpaw": {
+      "name": "Frostpaw",
+      "types": ["frost"],
+      "tier": 3,
+      "base_stats": {"hp": 22, "attack": 10, "defense": 9, "speed": 10, "special": 9},
+      "moves": ["frost_nip", "brace"]
+    }
+  }
+}
