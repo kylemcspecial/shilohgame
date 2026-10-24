@@ -21,8 +21,15 @@ class Game:
         self.clock = pygame.time.Clock()
         self.input = input_mod.Input()
         self.running = True
-        self.scene = WorldScene(self)
+        self.world = WorldScene(self)
+        self.scene = self.world
         self.font = pygame.font.Font(pygame.font.get_default_font(), 8)
+
+    def start_battle(self, battle_scene):
+        self.scene = battle_scene
+
+    def end_battle(self):
+        self.scene = self.world
 
     def toggle_fullscreen(self):
         fullscreen = not self.fullscreen

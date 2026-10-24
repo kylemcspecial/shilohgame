@@ -32,9 +32,85 @@
         "S": "trap_shop",
         "D": "door"
       },
-      "exits": {
-        "south": "whispering_pines"
-      }
+      "warps": [
+        {
+          "x": 5,
+          "y": 12,
+          "zone": "whispering_pines",
+          "tx": 18,
+          "ty": 11
+        },
+        {
+          "x": 9,
+          "y": 12,
+          "zone": "whispering_pines",
+          "tx": 18,
+          "ty": 11
+        },
+        {
+          "x": 12,
+          "y": 12,
+          "zone": "whispering_pines",
+          "tx": 18,
+          "ty": 11
+        }
+      ]
+    },
+    "whispering_pines": {
+      "name": "Whispering Pines",
+      "width": 20,
+      "height": 15,
+      "tiles": [
+        "TTTTTTTTTTTTTTTTTTTT",
+        "TT........G.......TT",
+        "T...GG....G..GG....T",
+        "T..GGGG......GGG...T",
+        "T..GGGG...GG.GGG...T",
+        "T...GG....GGG......T",
+        "T........GGG...G...T",
+        "T...G...GGG....GG..T",
+        "T..GGG..GG.....G...T",
+        "T..GGG.........GG..T",
+        "T...G.....D......G.T",
+        "T........D.........T",
+        "TT................TT",
+        "TTT..............TTT",
+        "TTTTTTTTTTTTTTTTTTTT"
+      ],
+      "legend": {
+        "T": "tree",
+        ".": "grass",
+        "G": "grass_tall",
+        "R": "road",
+        "D": "door"
+      },
+      "warps": [
+        {
+          "x": 10,
+          "y": 10,
+          "zone": "hunters_rest",
+          "tx": 5,
+          "ty": 11
+        },
+        {
+          "x": 9,
+          "y": 11,
+          "zone": "hunters_rest",
+          "tx": 5,
+          "ty": 11
+        }
+      ],
+      "encounters": {
+        "mossrat": 40,
+        "fernpup": 25,
+        "brookfin": 20,
+        "thornbear": 10,
+        "fangmoth": 5
+      },
+      "encounter_levels": [
+        2,
+        5
+      ]
     }
   },
   "start_zone": "hunters_rest"

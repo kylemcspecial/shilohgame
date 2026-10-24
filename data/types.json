@@ -1,0 +1,10 @@
+{
+  "beats": {
+    "leaf": ["stone", "water"],
+    "ember": ["leaf", "frost"],
+    "water": ["ember", "stone"],
+    "stone": ["ember", "storm"],
+    "storm": ["water", "leaf"],
+    "frost": ["leaf", "storm"]
+  }
+}
