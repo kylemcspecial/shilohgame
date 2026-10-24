@@ -59,12 +59,14 @@ class Input:
         for i in range(pygame.joystick.get_count()):
             stick = pygame.joystick.Joystick(i)
             stick.init()
-            self._joysticks[i] = stick
+            self._joysticks[stick.get_instance_id()] = stick
 
     def _joystick_actions(self):
         actions = set()
         for stick in self._joysticks.values():
             for axis, (neg, pos) in _JOY_AXIS_MAP.items():
+                if axis >= stick.get_numaxes():
+                    continue
                 value = stick.get_axis(axis)
                 if value < -_AXIS_DEADZONE:
                     actions.add(neg)
@@ -98,7 +100,11 @@ class Input:
             elif event.type == pygame.JOYDEVICEADDED:
                 stick = pygame.joystick.Joystick(event.device_index)
                 stick.init()
-                self._joysticks[event.device_index] = stick
+                self._joysticks[stick.get_instance_id()] = stick
+            elif event.type == pygame.JOYDEVICEREMOVED:
+                stick = self._joysticks.pop(event.instance_id, None)
+                if stick is not None:
+                    stick.quit()
 
         keys = pygame.key.get_pressed()
         for key, action in _KEY_MAP.items():
@@ -108,6 +114,7 @@ class Input:
         current |= self._joystick_actions()
 
         self.held = current
+        self.held_set = self.held
         self.pressed = current - previously_held
 
         return self.pressed

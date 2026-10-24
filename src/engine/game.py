@@ -1,10 +1,9 @@
 """Core game loop: window, integer scaling, scene management."""
 import os
-import sys
 
 import pygame
 
-from ..engine.constants import SCREEN_W, SCREEN_H, FPS, BLACK, WHITE
+from ..engine.constants import SCREEN_W, SCREEN_H, FPS
 from ..engine import input as input_mod
 from ..world.scene import WorldScene
 
@@ -26,36 +25,38 @@ class Game:
         self.font = pygame.font.Font(pygame.font.get_default_font(), 8)
 
     def toggle_fullscreen(self):
-        self.fullscreen = not self.fullscreen
-        if self.fullscreen:
-            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.SCALED)
-        else:
-            self.screen = pygame.display.set_mode((SCREEN_W * 3, SCREEN_H * 3), pygame.SCALED)
+        fullscreen = not self.fullscreen
+        flags = pygame.SCALED | (pygame.FULLSCREEN if fullscreen else 0)
+        screen = pygame.display.set_mode((SCREEN_W * 3, SCREEN_H * 3), flags)
+        self.screen = screen
+        self.fullscreen = fullscreen
 
     def quit(self):
         self.running = False
 
     def run(self):
-        while self.running:
-            events = pygame.event.get()
-            for event in events:
-                if event.type == pygame.QUIT:
-                    self.quit()
-                    return
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
-                    self.toggle_fullscreen()
+        try:
+            while self.running:
+                events = pygame.event.get()
+                for event in events:
+                    if event.type == pygame.QUIT:
+                        self.quit()
+                        return
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+                        self.toggle_fullscreen()
 
-            self.input.update(events)
-            if input_mod.PAUSE in self.input.pressed:
-                self.scene.toggle_pause()
+                self.input.update(events)
+                if input_mod.PAUSE in self.input.pressed:
+                    self.scene.toggle_pause()
 
-            dt = self.clock.tick(FPS) / 1000.0
-            self.scene.update(dt)
-            self.scene.draw(self.buffer)
+                dt = self.clock.tick(FPS) / 1000.0
+                self.scene.update(dt)
+                self.scene.draw(self.buffer)
 
-            pygame.transform.scale(self.buffer, self.screen.get_size(), self.screen)
-            pygame.display.flip()
-        pygame.quit()
+                pygame.transform.scale(self.buffer, self.screen.get_size(), self.screen)
+                pygame.display.flip()
+        finally:
+            pygame.quit()
 
 
 def main():

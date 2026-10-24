@@ -62,3 +62,21 @@ def test_player_steps_and_collides(tile_map):
     assert (player.tile_x, player.tile_y) == (1, 1)
     assert player.try_step(0, 1, tile_map) is True     # grass below
     assert (player.tile_x, player.tile_y) == (1, 2)
+
+
+def test_all_zone_tiles_are_rectangular_and_renderable():
+    from src.world.tiles import Tileset
+
+    tileset = Tileset()
+    for zone in load_zones()['zones'].values():
+        tile_map = TileMap(zone)
+        assert tile_map.width == zone['width']
+        assert tile_map.height == zone['height']
+        assert all(len(row) == tile_map.width for row in tile_map.grid)
+        for y in range(tile_map.height):
+            for x in range(tile_map.width):
+                char = tile_map.tile_at(x, y)
+                assert char in tile_map.legend
+                assert tileset.render(char).get_size() == (16, 16)
+        assert all(tile_map.is_solid(tile_map.width - 1, y)
+                   for y in range(tile_map.height))
