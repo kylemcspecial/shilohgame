@@ -31,6 +31,7 @@ def serialize(world):
         "party": [_serialize_monster(m) for m in world.party],
         "storage": [_serialize_monster(m) for m in world.storage],
         "inventory": dict(world.inventory.counts),
+        "trainer_defeated": dict(getattr(world.trainer_state, "defeated", {})),
     }
 
 
@@ -122,3 +123,5 @@ def apply_save(world, data):
     world.party = party if party else world.party
     world.storage = storage
     world.inventory = Inventory(data.get("inventory", {}))
+    if hasattr(world, "trainer_state"):
+        world.trainer_state.defeated = dict(data.get("trainer_defeated", {}))

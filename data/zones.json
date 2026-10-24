@@ -98,6 +98,27 @@
           "zone": "hunters_rest",
           "tx": 5,
           "ty": 11
+        },
+        {
+          "x": 4,
+          "y": 12,
+          "zone": "pineroot_crossing",
+          "tx": 9,
+          "ty": 11
+        },
+        {
+          "x": 5,
+          "y": 12,
+          "zone": "pineroot_crossing",
+          "tx": 9,
+          "ty": 11
+        },
+        {
+          "x": 6,
+          "y": 12,
+          "zone": "pineroot_crossing",
+          "tx": 9,
+          "ty": 11
         }
       ],
       "encounters": {
@@ -110,6 +131,369 @@
       "encounter_levels": [
         2,
         5
+      ]
+    },
+    "pineroot_crossing": {
+      "name": "Pineroot Crossing",
+      "width": 20,
+      "height": 15,
+      "tiles": [
+        "TTTTTTTTTTTTTTTTTTTT",
+        "T..................T",
+        "T.H...R.........S..T",
+        "T.....R............T",
+        "T..#####..#####....T",
+        "T..#...#..#...#....T",
+        "T..#####..#####....T",
+        "T.....R............T",
+        "T..G..R.....N......T",
+        "T.....R............T",
+        "T.....R............T",
+        "T.....D............T",
+        "TTTT..D..D..D..TTTTT",
+        "TTTTTTTTTTTTTTTTTTTT",
+        "TTTTTTTTTTTTTTTTTTTT"
+      ],
+      "legend": {
+        "T": "tree",
+        ".": "grass",
+        "G": "grass_tall",
+        "R": "road",
+        "#": "house",
+        "H": "healing_lodge",
+        "S": "trap_shop",
+        "D": "door",
+        "N": "npc"
+      },
+      "warps": [
+        {
+          "x": 9,
+          "y": 11,
+          "zone": "whispering_pines",
+          "tx": 5,
+          "ty": 11
+        },
+        {
+          "x": 5,
+          "y": 12,
+          "zone": "mossy_hollow",
+          "tx": 8,
+          "ty": 10
+        },
+        {
+          "x": 9,
+          "y": 12,
+          "zone": "mossy_hollow",
+          "tx": 8,
+          "ty": 10
+        },
+        {
+          "x": 12,
+          "y": 12,
+          "zone": "mossy_hollow",
+          "tx": 8,
+          "ty": 10
+        }
+      ]
+    },
+    "mossy_hollow": {
+      "name": "Mossy Hollow",
+      "width": 20,
+      "height": 15,
+      "tiles": [
+        "TTTTTTTTTTTTTTTTTTTT",
+        "TT..GG...GG....GG.TT",
+        "T...GGG..GGG...GGG.T",
+        "T..GGGG..GGG..GGGG.T",
+        "T..GGG....G...GGG..T",
+        "T...G....GG....G...T",
+        "T..GG...GGG...GG...T",
+        "T..GGG..GGG..GGG...T",
+        "T...GG...G...GG....T",
+        "T..GGG..GG...GGG...T",
+        "T...G...GGG....G...T",
+        "T..GG...D.D....GG..T",
+        "TT..............TTTT",
+        "TTT............TTTTT",
+        "TTTTTTTTTTTTTTTTTTTT"
+      ],
+      "legend": {
+        "T": "tree",
+        ".": "grass",
+        "G": "grass_tall",
+        "R": "road",
+        "D": "door"
+      },
+      "warps": [
+        {
+          "x": 8,
+          "y": 10,
+          "zone": "pineroot_crossing",
+          "tx": 9,
+          "ty": 11
+        },
+        {
+          "x": 4,
+          "y": 12,
+          "zone": "fernfall",
+          "tx": 9,
+          "ty": 11
+        },
+        {
+          "x": 5,
+          "y": 12,
+          "zone": "fernfall",
+          "tx": 9,
+          "ty": 11
+        }
+      ],
+      "encounters": {
+        "mossrat": 25,
+        "fernpup": 20,
+        "brookfin": 25,
+        "thornbear": 15,
+        "fangmoth": 15
+      },
+      "encounter_levels": [
+        6,
+        12
+      ]
+    },
+    "thornwood_ridge": {
+      "name": "Thornwood Ridge",
+      "width": 20,
+      "height": 15,
+      "tiles": [
+        "TTTTTTTTTTTTTTTTTTTT",
+        "TT..GG...GG....GG.TT",
+        "T...GGG..GGG...GGG.T",
+        "T..GGGG..GGG..GGGG.T",
+        "T..GGG....G...GGG..T",
+        "T...G....GG....G...T",
+        "T..GG...GGG...GG...T",
+        "T..GGG..GGG..GGG...T",
+        "T...GG...G...GG....T",
+        "T..GGG..GG...GGG...T",
+        "T...G...GGG....G...T",
+        "T..GG...D.D....GG..T",
+        "TT..............TTTT",
+        "TTT............TTTTT",
+        "TTTTTTTTTTTTTTTTTTTT"
+      ],
+      "legend": {
+        "T": "tree",
+        ".": "grass",
+        "G": "grass_tall",
+        "R": "road",
+        "D": "door"
+      },
+      "warps": [
+        {
+          "x": 8,
+          "y": 10,
+          "zone": "fernfall",
+          "tx": 9,
+          "ty": 11
+        },
+        {
+          "x": 4,
+          "y": 12,
+          "zone": "mossy_hollow_gate",
+          "tx": 9,
+          "ty": 11
+        },
+        {
+          "x": 5,
+          "y": 12,
+          "zone": "mossy_hollow_gate",
+          "tx": 9,
+          "ty": 11
+        }
+      ],
+      "encounters": {
+        "fernpup": 20,
+        "thornbear": 25,
+        "fangmoth": 20,
+        "stonewyrm": 20,
+        "frostpaw": 15
+      },
+      "encounter_levels": [
+        13,
+        22
+      ]
+    },
+    "fernfall": {
+      "name": "Fernfall",
+      "width": 20,
+      "height": 15,
+      "tiles": [
+        "TTTTTTTTTTTTTTTTTTTT",
+        "T..................T",
+        "T.H...R.........S..T",
+        "T.....R............T",
+        "T..#####..#####....T",
+        "T..#...#..#...#....T",
+        "T..#####..#####....T",
+        "T.....R............T",
+        "T..G..R.....N......T",
+        "T.....R............T",
+        "T.....R............T",
+        "T.....D............T",
+        "TTTT..D..D..D..TTTTT",
+        "TTTTTTTTTTTTTTTTTTTT",
+        "TTTTTTTTTTTTTTTTTTTT"
+      ],
+      "legend": {
+        "T": "tree",
+        ".": "grass",
+        "G": "grass_tall",
+        "R": "road",
+        "#": "house",
+        "H": "healing_lodge",
+        "S": "trap_shop",
+        "D": "door",
+        "N": "npc"
+      },
+      "warps": [
+        {
+          "x": 9,
+          "y": 11,
+          "zone": "mossy_hollow",
+          "tx": 5,
+          "ty": 11
+        },
+        {
+          "x": 5,
+          "y": 12,
+          "zone": "thornwood_ridge",
+          "tx": 8,
+          "ty": 10
+        },
+        {
+          "x": 9,
+          "y": 12,
+          "zone": "thornwood_ridge",
+          "tx": 8,
+          "ty": 10
+        },
+        {
+          "x": 12,
+          "y": 12,
+          "zone": "thornwood_ridge",
+          "tx": 8,
+          "ty": 10
+        }
+      ]
+    },
+    "emberfern_glade": {
+      "name": "Emberfern Glade",
+      "width": 20,
+      "height": 15,
+      "tiles": [
+        "TTTTTTTTTTTTTTTTTTTT",
+        "TT..GG...GG....GG.TT",
+        "T...GGG..GGG...GGG.T",
+        "T..GGGG..GGG..GGGG.T",
+        "T..GGG....G...GGG..T",
+        "T...G....GG....G...T",
+        "T..GG...GGG...GG...T",
+        "T..GGG..GGG..GGG...T",
+        "T...GG...G...GG....T",
+        "T..GGG..GG...GGG...T",
+        "T...G...GGG....G...T",
+        "T..GG...D.D....GG..T",
+        "TT..............TTTT",
+        "TTT............TTTTT",
+        "TTTTTTTTTTTTTTTTTTTT"
+      ],
+      "legend": {
+        "T": "tree",
+        ".": "grass",
+        "G": "grass_tall",
+        "R": "road",
+        "D": "door"
+      },
+      "warps": [
+        {
+          "x": 8,
+          "y": 10,
+          "zone": "mossy_hollow_gate",
+          "tx": 9,
+          "ty": 11
+        }
+      ],
+      "encounters": {
+        "thornbear": 15,
+        "emberlynx": 30,
+        "stonewyrm": 25,
+        "frostpaw": 30
+      },
+      "encounter_levels": [
+        23,
+        35
+      ]
+    },
+    "mossy_hollow_gate": {
+      "name": "Thornwick",
+      "width": 20,
+      "height": 15,
+      "tiles": [
+        "TTTTTTTTTTTTTTTTTTTT",
+        "T..................T",
+        "T.H...R.........S..T",
+        "T.....R............T",
+        "T..#####..#####....T",
+        "T..#...#..#...#....T",
+        "T..#####..#####....T",
+        "T.....R............T",
+        "T..G..R.....N......T",
+        "T.....R............T",
+        "T.....R............T",
+        "T.....D............T",
+        "TTTT..D..D..D..TTTTT",
+        "TTTTTTTTTTTTTTTTTTTT",
+        "TTTTTTTTTTTTTTTTTTTT"
+      ],
+      "legend": {
+        "T": "tree",
+        ".": "grass",
+        "G": "grass_tall",
+        "R": "road",
+        "#": "house",
+        "H": "healing_lodge",
+        "S": "trap_shop",
+        "D": "door",
+        "N": "npc"
+      },
+      "warps": [
+        {
+          "x": 9,
+          "y": 11,
+          "zone": "thornwood_ridge",
+          "tx": 5,
+          "ty": 11
+        },
+        {
+          "x": 5,
+          "y": 12,
+          "zone": "emberfern_glade",
+          "tx": 8,
+          "ty": 10
+        },
+        {
+          "x": 9,
+          "y": 12,
+          "zone": "emberfern_glade",
+          "tx": 8,
+          "ty": 10
+        },
+        {
+          "x": 12,
+          "y": 12,
+          "zone": "emberfern_glade",
+          "tx": 8,
+          "ty": 10
+        }
       ]
     }
   },

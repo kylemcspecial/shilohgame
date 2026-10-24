@@ -11,6 +11,7 @@ from ..world.player import Player, camera_offset
 from ..world.encounters import EncounterTracker
 from ..monsters.monster import Monster, load_species, load_moves, roll_wild
 from ..items.inventory import Inventory
+from ..world.trainers import TrainerState, trainers_in_zone, load_trainers
 
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data")
 
@@ -40,6 +41,8 @@ class WorldScene:
         self.pause_index = 0
         self.save_menu = False
         self.save_index = 0
+        self.trainer_state = TrainerState()
+        self.trainers_data = load_trainers()
         self.encounters = EncounterTracker(ENCOUNTER_RATE)
         self.inventory = Inventory({"basic_trap": 5, "potion_s": 3, "berry": 2})
         species_table = load_species()
@@ -72,6 +75,15 @@ class WorldScene:
         self.paused = not self.paused
         self.party_menu = False
         self.party_index = 0
+
+    def _open_shop(self):
+        """Face the Trap Shop and confirm to buy a Basic Trap (20 coins)."""
+        if self.coins >= 20:
+            self.coins -= 20
+            self.inventory.add("basic_trap")
+            self._flash("Bought a Basic Trap! (20 coins)")
+        else:
+            self._flash("Not enough coins for a trap!")
 
     def _heal_party(self):
         """Full party heal, free, and auto-save to the current slot."""
@@ -109,6 +121,7 @@ class WorldScene:
             self.switch_zone(warp["zone"], warp["tx"], warp["ty"])
             return
         zone = self.zones[self.zone_id]
+        self._check_trainer_sight()
         if "encounters" in zone and self.tile_map.is_tall_grass(
             self.player.tile_x, self.player.tile_y
         ):
@@ -120,6 +133,34 @@ class WorldScene:
                     BattleScene(self.game, self.party[0], enemy, inventory=self.inventory)
                 )
 
+    def _trainer_at(self, tx, ty):
+        for tid, t in trainers_in_zone(self.zone_id):
+            if t["x"] == tx and t["y"] == ty:
+                return tid, t
+        return None
+
+    def _check_trainer_sight(self):
+        """Start a trainer battle when the player steps adjacent to a trainer."""
+        found = self._trainer_at(self.player.tile_x, self.player.tile_y)
+        if found is None:
+            for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+                found = self._trainer_at(self.player.tile_x + dx, self.player.tile_y + dy)
+                if found is not None:
+                    break
+        if found is None:
+            return
+        tid, trainer = found
+        if not self.trainer_state.can_challenge(tid, trainer):
+            return
+        if self.trainer_state.defeated.get(tid) and not trainer.get("rival"):
+            pass  # cooldown handled by can_challenge
+        self.trainer_state.record_start(tid)
+        from ..battle.scene import TrainerBattle
+
+        self.game.start_battle(
+            TrainerBattle(self.game, self.party[0], tid, trainer, inventory=self.inventory)
+        )
+
     def _interact(self):
         """Confirm while facing a building: heal at the Lodge, rest and save at home."""
         dx, dy = {
@@ -128,6 +169,8 @@ class WorldScene:
         tx, ty = self.player.tile_x + dx, self.player.tile_y + dy
         if self.tile_map.is_healing_lodge(tx, ty):
             self._heal_party()
+        elif self.tile_map.tile_at(tx, ty) == "S":
+            self._open_shop()
         elif self.tile_map.tile_at(tx, ty) == "#":
             from ..save import save_game
 

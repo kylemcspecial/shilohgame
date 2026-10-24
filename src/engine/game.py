@@ -40,6 +40,16 @@ class Game:
                     self.world.storage.append(caught)
             if getattr(battle, "outcome", None) == "won":
                 self.world.battles_won += 1
+            elif getattr(battle, "outcome", None) == "trainer_won":
+                self.world.battles_won += 1
+                tid = getattr(battle, "trainer_id", None)
+                if tid is not None:
+                    self.world.trainer_state.record_win(tid)
+                    self.world.coins += battle.trainer["reward"]
+                if self.world.save_slot is not None:
+                    from ..save import save_game
+
+                    save_game(self.world, self.world.save_slot)
             elif getattr(battle, "outcome", None) == "lost":
                 self.world.heal_and_revive()
         self.scene = self.world

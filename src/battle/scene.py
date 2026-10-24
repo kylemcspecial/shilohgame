@@ -385,6 +385,75 @@ def _darken(color):
     return tuple(c // 2 for c in color)
 
 
+class TrainerBattle(BattleScene):
+    """Battle vs a trainer's team: no running, no catching, coins on win."""
+
+    def __init__(self, game, player_monster, trainer_id, trainer_data, inventory=None):
+        from ..monsters.monster import Monster, load_species, load_moves
+
+        species, moves = load_species(), load_moves()
+        self.team = [
+            Monster(t["species"], t["level"], species, moves) for t in trainer_data["team"]
+        ]
+        super().__init__(game, player_monster, self.team[0], inventory=inventory)
+        self.trainer_id = trainer_id
+        self.trainer = trainer_data
+        self.messages = [
+            f"{trainer_data['name']} wants to battle!",
+            f"\"{trainer_data['intro']}\"",
+            f"{trainer_data['name']} sent out {self.team[0].name}!",
+        ]
+        self.message_index = 0
+
+    def _choose(self, command):
+        if command == "Run":
+            self.messages.append("You can't run from a trainer battle!")
+            self.message_index = len(self.messages) - 1
+            return
+        if command == "Catch":
+            self.messages.append("You can't catch another trainer's monster!")
+            self.message_index = len(self.messages) - 1
+            return
+        super()._choose(command)
+
+    def _check_outcome(self):
+        if self.enemy_mon.fainted:
+            remaining = [m for m in self.team if not m.fainted and m is not self.enemy_mon]
+            if remaining:
+                self.messages.append(f"The wild {self.enemy_mon.name} fainted!")
+                self.enemy_mon = remaining[0]
+                self.messages.append(f"{self.trainer['name']} sent out {self.enemy_mon.name}!")
+                self.message_index = len(self.messages) - 1
+                return
+            from ..monsters import leveling
+
+            self.messages.append(f"{self.enemy_mon.name} fainted!")
+            xp = sum(
+                leveling.xp_for_defeat(m.level, m.species["tier"]) for m in self.team
+            )
+            events = leveling.grant_xp(self.player_mon, xp)
+            for event in events:
+                if event["type"] == "level_up":
+                    self.messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
+                elif event["type"] == "learned_move":
+                    move_name = load_moves()[event["move"]]["name"]
+                    self.messages.append(f"{self.player_mon.name} learned {move_name}!")
+            self.messages.append(f"\"{self.trainer['defeat']}\"\n")
+            self.messages.append(f"You got {self.trainer['reward']} coins!")
+            self.outcome = "trainer_won"
+            self.finished = True
+        elif self.player_mon.fainted:
+            if self._next_living_party_member() is not None:
+                self.messages.append(f"{self.player_mon.name} fainted!")
+                self.messages.append("Send out another monster?")
+                self.force_switch = True
+                return
+            self.messages.append(f"{self.player_mon.name} fainted!")
+            self.messages.append("You hurried back home...")
+            self.outcome = "lost"
+            self.finished = True
+
+
 def textwrap_lines(text, font, max_width):
     words = text.split()
     lines, current = [], ""
