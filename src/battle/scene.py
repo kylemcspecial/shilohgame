@@ -38,6 +38,9 @@ class BattleScene:
         self.switch_menu = False
         self.switch_index = 0
         self.force_switch = False
+        self.move_menu = False
+        self.move_index = 0
+        self.coins_won = 0
 
     def _append_messages(self, new_messages):
         """Append messages; nothing appended may be skipped.
@@ -104,6 +107,31 @@ class BattleScene:
             self.switch_menu = True
             self.switch_index = 0
             return
+        if self.move_menu:
+            moves = self.player_mon.moves
+            if not moves:
+                self.move_menu = False
+            elif input_mod.UP in pressed:
+                self.move_index = (self.move_index - 1) % len(moves)
+            elif input_mod.DOWN in pressed:
+                self.move_index = (self.move_index + 1) % len(moves)
+            elif input_mod.CONFIRM in pressed:
+                chosen = moves[self.move_index]
+                self.move_menu = False
+                if chosen["pp"] <= 0:
+                    # Out of PP: pass the turn (a struggle) so the enemy attacks
+                    # and the battle can still resolve toward defeat/revival.
+                    self._confirmed = True
+                    self._append_messages([
+                        f"{chosen['data']['name']} has no PP left!",
+                        f"{self.player_mon.name} can only struggle!",
+                    ])
+                    self._take_turn(None)
+                else:
+                    self._take_turn(chosen)
+            elif input_mod.CANCEL in pressed:
+                self.move_menu = False
+            return
         if self.switch_menu:
             living = self._switchable()
             if not living:
@@ -166,7 +194,8 @@ class BattleScene:
             self.trap_menu = True
             self.trap_index = 0
             return
-        self._take_turn(self.player_mon.usable_moves()[0] if self.player_mon.usable_moves() else None)
+        self.move_menu = True
+        self.move_index = 0
 
     def _choose_trap(self, index):
         self._confirmed = True
@@ -214,6 +243,8 @@ class BattleScene:
             if move is None:
                 if attacker is self.player_mon:
                     messages.append(f"{attacker.name} has no moves left!")
+                    attacker.hp = max(0, attacker.hp - 1)
+                    messages.append(f"{attacker.name} struggles and hurts itself!")
                 continue
             _, new = battle_mod.apply_move(attacker, defender, move, self.type_chart)
             messages.extend(new)
@@ -222,8 +253,10 @@ class BattleScene:
         self._check_outcome()
 
     def _enemy_move(self):
+        import random
+
         usable = self.enemy_mon.usable_moves()
-        return usable[0] if usable else None
+        return random.choice(usable) if usable else None
 
     def _switchable(self):
         return [m for m in self.party if not m.fainted and m is not self.player_mon]
@@ -274,6 +307,9 @@ class BattleScene:
             outcome_messages = [f"The wild {self.enemy_mon.name} fainted!"]
             xp = leveling.xp_for_defeat(self.enemy_mon.level, self.enemy_mon.species["tier"])
             outcome_messages.extend(self._xp_messages(xp))
+            coins = 2 * self.enemy_mon.level + 3 * (self.enemy_mon.species["tier"] - 1)
+            outcome_messages.append(f"You found {coins} coins!")
+            self.coins_won = coins
             outcome_messages.append("You won the battle!")
             self._append_messages(outcome_messages)
             self.outcome = "won"
@@ -308,6 +344,9 @@ class BattleScene:
         self._draw_message(surface)
         if self.finished:
             return
+        if self.move_menu:
+            self._draw_move_menu(surface)
+            return
         if self.switch_menu or self.trap_menu:
             if self.switch_menu:
                 self._draw_switch_menu(surface)
@@ -321,16 +360,50 @@ class BattleScene:
         surface.blit(label, ((SCREEN_W - label.get_width()) // 2, SCREEN_H // 2 - 4))
 
     def _draw_mon(self, surface, mon, pos, back):
+        """SNES-style monster: outline, 3-tone shading, idle bob, shadow."""
         size = 32
         x, y = pos
+        bob = int(pygame.time.get_ticks() / 400) % 2
+        if not back:
+            y += bob
+        outline = (28, 24, 40)
+        base = _MON_COLORS.get(mon.types[0], (200, 200, 200))
+        light = tuple(min(255, c + 50) for c in base)
+        dark = tuple(max(0, c - 60) for c in base)
         sprite = pygame.Surface((size, size), pygame.SRCALPHA)
-        color = _MON_COLORS.get(mon.types[0], (200, 200, 200))
-        pygame.draw.ellipse(sprite, color, (0, 8, 32, 24))
-        pygame.draw.circle(sprite, _darken(color), (16, 10), 10)
-        pygame.draw.circle(sprite, WHITE, (12, 8), 2)
-        pygame.draw.circle(sprite, WHITE, (20, 8), 2)
-        pygame.draw.circle(sprite, BLACK, (12, 8), 1)
-        pygame.draw.circle(sprite, BLACK, (20, 8), 1)
+        # body: outlined ellipse with top-left light band
+        pygame.draw.ellipse(sprite, outline, (-1, 7, 34, 26))
+        pygame.draw.ellipse(sprite, base, (0, 8, 32, 24))
+        pygame.draw.ellipse(sprite, light, (2, 8, 26, 14))
+        # belly
+        pygame.draw.ellipse(sprite, dark, (6, 18, 20, 12))
+        pygame.draw.ellipse(sprite, tuple(max(0, c - 25) for c in base), (7, 19, 18, 10))
+        # head
+        pygame.draw.circle(sprite, outline, (16, 10), 11)
+        pygame.draw.circle(sprite, base, (16, 10), 10)
+        pygame.draw.circle(sprite, light, (13, 7), 5)
+        # ears/horns
+        pygame.draw.polygon(sprite, outline, [(6, 4), (10, 10), (4, 10)])
+        pygame.draw.polygon(sprite, base, [(7, 5), (9, 9), (5, 9)])
+        pygame.draw.polygon(sprite, outline, [(26, 4), (28, 10), (22, 10)])
+        pygame.draw.polygon(sprite, base, [(25, 5), (27, 9), (23, 9)])
+        # eyes with white shine
+        for ex in (12, 20):
+            pygame.draw.circle(sprite, WHITE, (ex, 9), 3)
+            pygame.draw.circle(sprite, (20, 20, 30), (ex, 10), 2)
+            sprite.set_at((ex, 8), WHITE)
+        # fierce little fangs
+        pygame.draw.polygon(sprite, WHITE, [(13, 15), (14, 18), (15, 15)])
+        pygame.draw.polygon(sprite, WHITE, [(17, 15), (18, 18), (19, 15)])
+        # feet
+        pygame.draw.rect(sprite, outline, (4, 28, 6, 3))
+        pygame.draw.rect(sprite, dark, (5, 29, 4, 2))
+        pygame.draw.rect(sprite, outline, (22, 28, 6, 3))
+        pygame.draw.rect(sprite, dark, (23, 29, 4, 2))
+        # ground shadow
+        shadow = pygame.Surface((size, 5), pygame.SRCALPHA)
+        pygame.draw.ellipse(shadow, (16, 16, 24, 90), (4, 0, 24, 5))
+        surface.blit(shadow, (x + 2, y + 30))
         surface.blit(sprite, (x, y))
 
     def _draw_hp_box(self, surface, mon, pos):
@@ -342,10 +415,17 @@ class BattleScene:
         surface.blit(name, (x + 2, y + 2))
         level = self.font.render(f"L{mon.level}", False, WHITE, BLACK)
         surface.blit(level, (x + rect.w - level.get_width() - 2, y + 2))
+        from ..world.gfx import PALETTES
+
+        ui = PALETTES["ui"]
         frac = mon.hp / mon.max_hp
-        bar_color = (80, 200, 80) if frac > 0.5 else (240, 200, 60) if frac > 0.2 else (220, 60, 60)
+        bar_color = ui["hp_hi"] if frac > 0.5 else ui["hp_mid"] if frac > 0.2 else ui["hp_low"]
         pygame.draw.rect(surface, (60, 60, 60), (x + 2, y + 14, 84, 6))
-        pygame.draw.rect(surface, bar_color, (x + 2, y + 14, int(84 * frac), 6))
+        bar_w = int(84 * frac)
+        if bar_w > 0:
+            pygame.draw.rect(surface, bar_color, (x + 2, y + 14, bar_w, 6))
+            pygame.draw.line(surface, tuple(min(255, c + 60) for c in bar_color),
+                             (x + 2, y + 14), (x + 1 + bar_w, y + 14), 1)
 
     def _draw_message(self, surface):
         rect = pygame.Rect(0, SCREEN_H - 26, SCREEN_W, 26)
@@ -374,6 +454,29 @@ class BattleScene:
                     surface,
                     WHITE,
                     [(rect.x + 3, y + 4), (rect.x + 8, y + 7), (rect.x + 3, y + 10)],
+                )
+
+    def _draw_move_menu(self, surface):
+        """Move picker: name, type, PP; greyed out at 0 PP."""
+        moves = self.player_mon.moves
+        row_h = 11
+        rect = pygame.Rect(4, SCREEN_H - 26 - row_h * len(moves) - 2, 150,
+                           row_h * len(moves) + 4)
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        for i, mv in enumerate(moves):
+            has_pp = mv["pp"] > 0
+            color = WHITE if has_pp else (110, 110, 110)
+            label = self.font.render(
+                f"{mv['data']['name']} {mv['data']['type'][:3].upper()} PP{mv['pp']}",
+                False, color, BLACK,
+            )
+            y = rect.y + 2 + i * row_h
+            surface.blit(label, (rect.x + 10, y))
+            if i == self.move_index:
+                pygame.draw.polygon(
+                    surface, WHITE,
+                    [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
                 )
 
     def _draw_switch_menu(self, surface):

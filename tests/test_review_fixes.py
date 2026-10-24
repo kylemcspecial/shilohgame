@@ -74,7 +74,7 @@ def test_turn_messages_step_through(tmp_path):
     battle.intro_timer = 0
     battle.messages = ["intro"]
     battle._read = len(battle.messages) - 1  # intro confirmed
-    battle._choose("Fight")
+    battle._choose("Fight"); battle._take_turn(battle.player_mon.moves[0])
     assert len(battle.messages) >= 3
     assert battle.message_index == 1  # first NEW message, not the last
 
@@ -85,7 +85,7 @@ def test_effectiveness_message_reachable(tmp_path):
     battle.intro_timer = 0
     battle.messages = ["intro"]
     battle._read = len(battle.messages) - 1
-    battle._choose("Fight")  # leaf vs water: super effective
+    battle._choose("Fight"); battle._take_turn(battle.player_mon.moves[0])  # leaf vs water: super effective
     texts = battle.messages
     assert any("super effective" in t for t in texts)
     assert battle.message_index < len(texts) - 1
