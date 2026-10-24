@@ -335,8 +335,8 @@ class WorldScene:
             self.player.px, self.player.py, self.tile_map.width, self.tile_map.height
         )
 
-        x0 = cam_x // TILE_SIZE
-        y0 = cam_y // TILE_SIZE
+        x0 = int(cam_x) // TILE_SIZE
+        y0 = int(cam_y) // TILE_SIZE
         x1 = min(self.tile_map.width, x0 + SCREEN_W // TILE_SIZE + 2)
         y1 = min(self.tile_map.height, y0 + SCREEN_H // TILE_SIZE + 2)
 
