@@ -29,6 +29,14 @@ class Game:
         self.scene = battle_scene
 
     def end_battle(self):
+        battle = self.scene
+        if battle is not self.world:
+            caught = getattr(battle, "caught_monster", None)
+            if caught is not None:
+                if len(self.world.party) < 6:
+                    self.world.party.append(caught)
+                else:
+                    self.world.storage.append(caught)
         self.scene = self.world
 
     def toggle_fullscreen(self):

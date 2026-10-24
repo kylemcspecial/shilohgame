@@ -10,6 +10,7 @@ from ..world.tiles import TileMap, Tileset
 from ..world.player import Player, camera_offset
 from ..world.encounters import EncounterTracker
 from ..monsters.monster import Monster, load_species, load_moves, roll_wild
+from ..items.inventory import Inventory
 
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data")
 
@@ -35,9 +36,11 @@ class WorldScene:
         self.font = pygame.font.Font(pygame.font.get_default_font(), 8)
         self.zone_banner_timer = 2.0
         self.encounters = EncounterTracker(ENCOUNTER_RATE)
+        self.inventory = Inventory({"basic_trap": 5, "potion_s": 3, "berry": 2})
         species_table = load_species()
         move_table = load_moves()
         self.party = [Monster("fernpup", 5, species_table, move_table)]
+        self.storage = []
 
     def switch_zone(self, zone_id, tx, ty):
         self.zone_id = zone_id
@@ -70,7 +73,9 @@ class WorldScene:
                 from ..battle.scene import BattleScene
 
                 enemy = roll_wild(zone)
-                self.game.start_battle(BattleScene(self.game, self.party[0], enemy))
+                self.game.start_battle(
+                    BattleScene(self.game, self.party[0], enemy, inventory=self.inventory)
+                )
 
     def update(self, dt):
         if self.paused:
