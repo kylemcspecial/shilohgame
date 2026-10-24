@@ -1,0 +1,41 @@
+{
+  "zones": {
+    "hunters_rest": {
+      "name": "Hunter's Rest",
+      "width": 20,
+      "height": 15,
+      "tiles": [
+        "TTTTTTTTTTTTTTTTTTTT",
+        "T..................T",
+        "T.G...R.........H.T",
+        "T.....R............T",
+        "T..P..R............T",
+        "T.....R..#####..S..T",
+        "T.....R..#...#.....T",
+        "T.....R..#...#.....T",
+        "T.....R..#####.....T",
+        "T.....R............T",
+        "T.....R............T",
+        "T.....R............T",
+        "TTTT..D..D..D..TTTTT",
+        "TTTTTTTTTTTTTTTTTTTT",
+        "TTTTTTTTTTTTTTTTTTTT"
+      ],
+      "legend": {
+        "T": "tree",
+        ".": "grass",
+        "G": "grass_tall",
+        "P": "player_start",
+        "R": "road",
+        "#": "house",
+        "H": "healing_lodge",
+        "S": "trap_shop",
+        "D": "door"
+      },
+      "exits": {
+        "south": "whispering_pines"
+      }
+    }
+  },
+  "start_zone": "hunters_rest"
+}
