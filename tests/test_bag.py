@@ -104,3 +104,49 @@ def test_shop_stocks_consumables():
 def test_starting_inventory_has_bag_items():
     inv = Inventory({"basic_trap": 5, "potion_s": 3, "berry": 2})
     assert inv.usables()
+
+
+def test_brace_stacks_reset_on_level_up():
+    """Codex review on PR #17: leveling rebuilds defense, so brace stacks must reset."""
+    from src.monsters import leveling
+
+    species = load_species()
+    moves = load_moves()
+    mon = Monster("fernpup", 5, species, moves)
+    mon.brace_stacks = 2
+    mon.xp = leveling.xp_to_next(5)
+    events = leveling.grant_xp(mon, 1)
+    assert any(e["type"] == "level_up" for e in events)
+    assert mon.brace_stacks == 0
+    assert mon.defense == species["fernpup"]["base_stats"]["defense"] + mon.level // 2
+
+
+def test_brace_stacks_reset_on_evolution():
+    """Evolution rebuilds stats in place; stale brace stacks must not survive."""
+    from src.monsters import leveling
+
+    species = load_species()
+    evo = species["mossrat"].get("evolve_into")
+    assert evo, "mossrat must have an evolution for this test"
+    mon = Monster("mossrat", evo["level"], species, load_moves())
+    mon.brace_stacks = 2
+    result = leveling.check_evolution(mon)
+    assert result is not None
+    assert mon.brace_stacks == 0
+
+
+def test_zero_pp_choice_advances_turn(tmp_path):
+    """Codex review on PR #17: a 0-PP move pick must struggle and advance the turn."""
+    battle = make_battle(tmp_path, inventory=Inventory({"potion_s": 1}))
+    for mv in battle.player_mon.moves:
+        mv["pp"] = 0
+    battle.move_menu = True
+    battle.move_index = 0
+    turns = []
+    battle._take_turn = lambda move: turns.append(move)
+    battle.update(1 / 60)  # no pending messages, intro done
+    battle.game.input.pressed = {"confirm"}
+    battle.update(1 / 60)
+    assert turns == [None], "0-PP confirm must pass the turn via _take_turn(None)"
+    assert not battle.move_menu
+    assert any("can only struggle" in m for m in battle.messages)
