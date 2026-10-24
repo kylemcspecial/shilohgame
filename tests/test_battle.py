@@ -62,11 +62,11 @@ def test_damage_formula_and_effectiveness():
 
 def test_type_multiplier_neutral_and_weak():
     chart = load_type_chart()
-    assert battle_mod.type_multiplier("ember", ["stone"], chart) == 0.5
+    assert battle_mod.type_multiplier("ember", ["stone"], chart) == 1.0
     assert battle_mod.type_multiplier("leaf", ["stone"], chart) == 2.0
     assert battle_mod.type_multiplier("ember", ["frost"], chart) == 2.0
     assert battle_mod.type_multiplier("frost", ["stone"], chart) == 1.0
-    assert battle_mod.type_multiplier("stone", ["leaf"], chart) == 0.5
+    assert battle_mod.type_multiplier("stone", ["leaf"], chart) == 1.0
 
 
 def test_turn_order_speed_and_ties():

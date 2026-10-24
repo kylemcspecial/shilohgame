@@ -55,9 +55,25 @@ class Monster:
         return [m for m in self.moves if m["pp"] > 0]
 
 
-def roll_wild(zone):
-    """Pick a random wild monster for a zone using its encounter table."""
+def roll_wild(zone, party=None, species_table=None, move_table=None):
+    """Pick a random wild monster for a zone using its encounter table.
+
+    Levels scale with the party average (spec 9.3) but never exceed the
+    player's best level + 5. Tier-4 legendaries have a small chance to
+    appear in any zone on top of the normal table (spec 9.2).
+    """
+    species_table = species_table or load_species()
+    move_table = move_table or load_moves()
     table = zone["encounters"]
     species_id = random.choices(list(table), weights=table.values())[0]
     lo, hi = zone["encounter_levels"]
-    return Monster(species_id, random.randint(lo, hi))
+    level = random.randint(lo, hi)
+    if party:
+        avg = sum(m.level for m in party) / len(party)
+        best = max(m.level for m in party)
+        level = max(level, min(int(avg), best + 5))
+    if random.random() < 0.01:
+        legendaries = [sid for sid, s in species_table.items() if s["tier"] == 4]
+        species_id = random.choice(legendaries)
+        level = min(50, level + 2)
+    return Monster(species_id, level, species_table, move_table)

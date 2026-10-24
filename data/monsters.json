@@ -1,28 +1,5 @@
 {
   "species": {
-    "fernpup": {
-      "name": "Fernpup",
-      "types": [
-        "leaf"
-      ],
-      "tier": 2,
-      "base_stats": {
-        "hp": 22,
-        "attack": 9,
-        "defense": 8,
-        "speed": 9,
-        "special": 7
-      },
-      "moves": [
-        "tackle",
-        "brace"
-      ],
-      "move_pool": {
-        "4": "leaf_rip",
-        "8": "brace",
-        "12": "ember_swipe"
-      }
-    },
     "mossrat": {
       "name": "Mossrat",
       "types": [
@@ -34,7 +11,7 @@
         "attack": 7,
         "defense": 6,
         "speed": 8,
-        "special": 5
+        "special": 6
       },
       "moves": [
         "tackle",
@@ -43,6 +20,37 @@
       "move_pool": {
         "5": "leaf_rip",
         "10": "stone_toss"
+      },
+      "evolve_into": {
+        "species": "bramblerat",
+        "level": 16
+      }
+    },
+    "fernpup": {
+      "name": "Fernpup",
+      "types": [
+        "leaf"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 22,
+        "attack": 9,
+        "defense": 8,
+        "speed": 9,
+        "special": 6
+      },
+      "moves": [
+        "tackle",
+        "brace"
+      ],
+      "move_pool": {
+        "4": "leaf_rip",
+        "8": "brace",
+        "12": "ember_swipe"
+      },
+      "evolve_into": {
+        "species": "fernfox",
+        "level": 18
       }
     },
     "brookfin": {
@@ -65,6 +73,10 @@
       "move_pool": {
         "6": "frost_nip",
         "11": "splash_lash"
+      },
+      "evolve_into": {
+        "species": "riverfin",
+        "level": 16
       }
     },
     "thornbear": {
@@ -78,7 +90,7 @@
         "attack": 10,
         "defense": 9,
         "speed": 6,
-        "special": 7
+        "special": 6
       },
       "moves": [
         "leaf_rip",
@@ -87,6 +99,10 @@
       "move_pool": {
         "7": "stone_toss",
         "13": "ember_swipe"
+      },
+      "evolve_into": {
+        "species": "thornmaul",
+        "level": 20
       }
     },
     "fangmoth": {
@@ -100,7 +116,7 @@
         "attack": 11,
         "defense": 6,
         "speed": 11,
-        "special": 8
+        "special": 6
       },
       "moves": [
         "static_bite",
@@ -109,6 +125,10 @@
       "move_pool": {
         "6": "static_bite",
         "12": "frost_nip"
+      },
+      "evolve_into": {
+        "species": "stormmoth",
+        "level": 19
       }
     },
     "emberlynx": {
@@ -122,7 +142,7 @@
         "attack": 12,
         "defense": 8,
         "speed": 12,
-        "special": 9
+        "special": 6
       },
       "moves": [
         "ember_swipe",
@@ -131,6 +151,10 @@
       "move_pool": {
         "8": "ember_swipe",
         "14": "leaf_rip"
+      },
+      "evolve_into": {
+        "species": "infernox",
+        "level": 26
       }
     },
     "stonewyrm": {
@@ -144,7 +168,7 @@
         "attack": 11,
         "defense": 12,
         "speed": 5,
-        "special": 7
+        "special": 6
       },
       "moves": [
         "stone_toss",
@@ -153,6 +177,10 @@
       "move_pool": {
         "9": "stone_toss",
         "15": "ember_swipe"
+      },
+      "evolve_into": {
+        "species": "granitewyrm",
+        "level": 28
       }
     },
     "frostpaw": {
@@ -166,7 +194,7 @@
         "attack": 10,
         "defense": 9,
         "speed": 10,
-        "special": 9
+        "special": 6
       },
       "moves": [
         "frost_nip",
@@ -175,6 +203,765 @@
       "move_pool": {
         "7": "frost_nip",
         "13": "splash_lash"
+      },
+      "evolve_into": {
+        "species": "glacierpaw",
+        "level": 25
+      }
+    },
+    "bramblerat": {
+      "name": "Bramblerat",
+      "types": [
+        "leaf"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 26,
+        "attack": 10,
+        "defense": 9,
+        "speed": 9,
+        "special": 6
+      },
+      "moves": [
+        "leaf_rip",
+        "brace"
+      ],
+      "move_pool": {
+        "16": "stone_toss"
+      }
+    },
+    "fernfox": {
+      "name": "Fernfox",
+      "types": [
+        "leaf"
+      ],
+      "tier": 3,
+      "base_stats": {
+        "hp": 30,
+        "attack": 13,
+        "defense": 11,
+        "speed": 12,
+        "special": 6
+      },
+      "moves": [
+        "leaf_rip",
+        "brace"
+      ],
+      "move_pool": {
+        "18": "ember_swipe",
+        "24": "leaf_rip"
+      }
+    },
+    "riverfin": {
+      "name": "Riverfin",
+      "types": [
+        "water"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 27,
+        "attack": 11,
+        "defense": 9,
+        "speed": 9,
+        "special": 6
+      },
+      "moves": [
+        "splash_lash",
+        "brace"
+      ],
+      "move_pool": {
+        "16": "frost_nip"
+      }
+    },
+    "thornmaul": {
+      "name": "Thornmaul",
+      "types": [
+        "leaf",
+        "stone"
+      ],
+      "tier": 3,
+      "base_stats": {
+        "hp": 34,
+        "attack": 14,
+        "defense": 13,
+        "speed": 7,
+        "special": 6
+      },
+      "moves": [
+        "leaf_rip",
+        "stone_toss"
+      ],
+      "move_pool": {
+        "20": "ember_swipe"
+      }
+    },
+    "stormmoth": {
+      "name": "Stormmoth",
+      "types": [
+        "storm"
+      ],
+      "tier": 3,
+      "base_stats": {
+        "hp": 27,
+        "attack": 14,
+        "defense": 9,
+        "speed": 14,
+        "special": 6
+      },
+      "moves": [
+        "static_bite",
+        "brace"
+      ],
+      "move_pool": {
+        "19": "frost_nip"
+      }
+    },
+    "infernox": {
+      "name": "Infernox",
+      "types": [
+        "ember"
+      ],
+      "tier": 4,
+      "base_stats": {
+        "hp": 31,
+        "attack": 17,
+        "defense": 11,
+        "speed": 15,
+        "special": 6
+      },
+      "moves": [
+        "ember_swipe",
+        "brace"
+      ],
+      "move_pool": {
+        "26": "leaf_rip"
+      }
+    },
+    "granitewyrm": {
+      "name": "Granitewyrm",
+      "types": [
+        "stone"
+      ],
+      "tier": 4,
+      "base_stats": {
+        "hp": 38,
+        "attack": 15,
+        "defense": 17,
+        "speed": 7,
+        "special": 6
+      },
+      "moves": [
+        "stone_toss",
+        "ember_swipe"
+      ],
+      "move_pool": {
+        "28": "stone_toss"
+      }
+    },
+    "glacierpaw": {
+      "name": "Glacierpaw",
+      "types": [
+        "frost"
+      ],
+      "tier": 4,
+      "base_stats": {
+        "hp": 30,
+        "attack": 14,
+        "defense": 13,
+        "speed": 13,
+        "special": 6
+      },
+      "moves": [
+        "frost_nip",
+        "splash_lash"
+      ],
+      "move_pool": {
+        "25": "frost_nip"
+      }
+    },
+    "petalfin": {
+      "name": "Petalfin",
+      "types": [
+        "leaf",
+        "water"
+      ],
+      "tier": 1,
+      "base_stats": {
+        "hp": 17,
+        "attack": 7,
+        "defense": 7,
+        "speed": 8,
+        "special": 6
+      },
+      "moves": [
+        "leaf_rip",
+        "splash_lash"
+      ],
+      "move_pool": {
+        "9": "leaf_rip"
+      }
+    },
+    "dewvole": {
+      "name": "Dewvole",
+      "types": [
+        "water"
+      ],
+      "tier": 1,
+      "base_stats": {
+        "hp": 16,
+        "attack": 7,
+        "defense": 6,
+        "speed": 9,
+        "special": 6
+      },
+      "moves": [
+        "splash_lash",
+        "brace"
+      ],
+      "move_pool": {
+        "8": "frost_nip"
+      }
+    },
+    "puddlewisp": {
+      "name": "Puddlewisp",
+      "types": [
+        "water",
+        "storm"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 20,
+        "attack": 9,
+        "defense": 7,
+        "speed": 10,
+        "special": 6
+      },
+      "moves": [
+        "splash_lash",
+        "static_bite"
+      ],
+      "move_pool": {
+        "12": "splash_lash"
+      }
+    },
+    "gustling": {
+      "name": "Gustling",
+      "types": [
+        "storm"
+      ],
+      "tier": 1,
+      "base_stats": {
+        "hp": 17,
+        "attack": 8,
+        "defense": 6,
+        "speed": 11,
+        "special": 6
+      },
+      "moves": [
+        "static_bite",
+        "brace"
+      ],
+      "move_pool": {
+        "10": "static_bite"
+      }
+    },
+    "sparkit": {
+      "name": "Sparkit",
+      "types": [
+        "storm"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 20,
+        "attack": 11,
+        "defense": 7,
+        "speed": 12,
+        "special": 6
+      },
+      "moves": [
+        "static_bite",
+        "brace"
+      ],
+      "move_pool": {
+        "13": "static_bite"
+      }
+    },
+    "chirrel": {
+      "name": "Chirrel",
+      "types": [
+        "leaf"
+      ],
+      "tier": 1,
+      "base_stats": {
+        "hp": 16,
+        "attack": 6,
+        "defense": 6,
+        "speed": 10,
+        "special": 6
+      },
+      "moves": [
+        "tackle",
+        "brace"
+      ],
+      "move_pool": {
+        "7": "leaf_rip"
+      }
+    },
+    "pinehog": {
+      "name": "Pinehog",
+      "types": [
+        "leaf",
+        "stone"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 22,
+        "attack": 9,
+        "defense": 11,
+        "speed": 7,
+        "special": 6
+      },
+      "moves": [
+        "leaf_rip",
+        "stone_toss"
+      ],
+      "move_pool": {
+        "11": "stone_toss"
+      }
+    },
+    "barkshell": {
+      "name": "Barkshell",
+      "types": [
+        "stone",
+        "leaf"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 24,
+        "attack": 8,
+        "defense": 13,
+        "speed": 5,
+        "special": 6
+      },
+      "moves": [
+        "stone_toss",
+        "brace"
+      ],
+      "move_pool": {
+        "12": "leaf_rip"
+      }
+    },
+    "pebblet": {
+      "name": "Pebblet",
+      "types": [
+        "stone"
+      ],
+      "tier": 1,
+      "base_stats": {
+        "hp": 18,
+        "attack": 8,
+        "defense": 12,
+        "speed": 5,
+        "special": 6
+      },
+      "moves": [
+        "stone_toss",
+        "brace"
+      ],
+      "move_pool": {
+        "9": "stone_toss"
+      }
+    },
+    "cragmite": {
+      "name": "Cragmite",
+      "types": [
+        "stone"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 23,
+        "attack": 11,
+        "defense": 12,
+        "speed": 6,
+        "special": 6
+      },
+      "moves": [
+        "stone_toss",
+        "brace"
+      ],
+      "move_pool": {
+        "14": "stone_toss"
+      }
+    },
+    "kindlekit": {
+      "name": "Kindlekit",
+      "types": [
+        "ember"
+      ],
+      "tier": 1,
+      "base_stats": {
+        "hp": 17,
+        "attack": 9,
+        "defense": 6,
+        "speed": 10,
+        "special": 6
+      },
+      "moves": [
+        "ember_swipe",
+        "brace"
+      ],
+      "move_pool": {
+        "8": "ember_swipe"
+      }
+    },
+    "flarehound": {
+      "name": "Flarehound",
+      "types": [
+        "ember"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 22,
+        "attack": 12,
+        "defense": 8,
+        "speed": 12,
+        "special": 6
+      },
+      "moves": [
+        "ember_swipe",
+        "brace"
+      ],
+      "move_pool": {
+        "15": "ember_swipe"
+      }
+    },
+    "cinderpy": {
+      "name": "Cinderpy",
+      "types": [
+        "ember"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 21,
+        "attack": 11,
+        "defense": 8,
+        "speed": 9,
+        "special": 6
+      },
+      "moves": [
+        "ember_swipe",
+        "brace"
+      ],
+      "move_pool": {
+        "12": "ember_swipe"
+      }
+    },
+    "smokeyote": {
+      "name": "Smokeyote",
+      "types": [
+        "ember",
+        "storm"
+      ],
+      "tier": 3,
+      "base_stats": {
+        "hp": 24,
+        "attack": 13,
+        "defense": 9,
+        "speed": 12,
+        "special": 6
+      },
+      "moves": [
+        "ember_swipe",
+        "static_bite"
+      ],
+      "move_pool": {
+        "16": "ember_swipe"
+      }
+    },
+    "chillcub": {
+      "name": "Chillcub",
+      "types": [
+        "frost"
+      ],
+      "tier": 1,
+      "base_stats": {
+        "hp": 18,
+        "attack": 8,
+        "defense": 8,
+        "speed": 8,
+        "special": 6
+      },
+      "moves": [
+        "frost_nip",
+        "brace"
+      ],
+      "move_pool": {
+        "9": "frost_nip"
+      }
+    },
+    "sleetfox": {
+      "name": "Sleetfox",
+      "types": [
+        "frost"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 21,
+        "attack": 10,
+        "defense": 8,
+        "speed": 12,
+        "special": 6
+      },
+      "moves": [
+        "frost_nip",
+        "brace"
+      ],
+      "move_pool": {
+        "14": "frost_nip"
+      }
+    },
+    "hailhawk": {
+      "name": "Hailhawk",
+      "types": [
+        "frost",
+        "storm"
+      ],
+      "tier": 3,
+      "base_stats": {
+        "hp": 23,
+        "attack": 12,
+        "defense": 8,
+        "speed": 14,
+        "special": 6
+      },
+      "moves": [
+        "frost_nip",
+        "static_bite"
+      ],
+      "move_pool": {
+        "17": "frost_nip"
+      }
+    },
+    "mistfrog": {
+      "name": "Mistfrog",
+      "types": [
+        "water",
+        "frost"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 22,
+        "attack": 9,
+        "defense": 9,
+        "speed": 8,
+        "special": 6
+      },
+      "moves": [
+        "splash_lash",
+        "frost_nip"
+      ],
+      "move_pool": {
+        "13": "splash_lash"
+      }
+    },
+    "shadewisp": {
+      "name": "Shadewisp",
+      "types": [
+        "storm",
+        "frost"
+      ],
+      "tier": 3,
+      "base_stats": {
+        "hp": 20,
+        "attack": 12,
+        "defense": 7,
+        "speed": 13,
+        "special": 6
+      },
+      "moves": [
+        "static_bite",
+        "frost_nip"
+      ],
+      "move_pool": {
+        "15": "static_bite"
+      }
+    },
+    "bramblecat": {
+      "name": "Bramblecat",
+      "types": [
+        "leaf"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 23,
+        "attack": 11,
+        "defense": 9,
+        "speed": 11,
+        "special": 6
+      },
+      "moves": [
+        "leaf_rip",
+        "brace"
+      ],
+      "move_pool": {
+        "14": "leaf_rip"
+      }
+    },
+    "thistlefin": {
+      "name": "Thistlefin",
+      "types": [
+        "leaf",
+        "storm"
+      ],
+      "tier": 3,
+      "base_stats": {
+        "hp": 24,
+        "attack": 12,
+        "defense": 9,
+        "speed": 12,
+        "special": 6
+      },
+      "moves": [
+        "leaf_rip",
+        "static_bite"
+      ],
+      "move_pool": {
+        "16": "leaf_rip"
+      }
+    },
+    "marshpaw": {
+      "name": "Marshpaw",
+      "types": [
+        "water",
+        "leaf"
+      ],
+      "tier": 2,
+      "base_stats": {
+        "hp": 23,
+        "attack": 10,
+        "defense": 9,
+        "speed": 9,
+        "special": 6
+      },
+      "moves": [
+        "splash_lash",
+        "leaf_rip"
+      ],
+      "move_pool": {
+        "13": "splash_lash"
+      }
+    },
+    "sunlessowl": {
+      "name": "Sunlessowl",
+      "types": [
+        "frost",
+        "leaf"
+      ],
+      "tier": 3,
+      "base_stats": {
+        "hp": 25,
+        "attack": 11,
+        "defense": 10,
+        "speed": 11,
+        "special": 6
+      },
+      "moves": [
+        "frost_nip",
+        "leaf_rip"
+      ],
+      "move_pool": {
+        "18": "frost_nip"
+      }
+    },
+    "emberfrog": {
+      "name": "Emberfrog",
+      "types": [
+        "ember",
+        "water"
+      ],
+      "tier": 3,
+      "base_stats": {
+        "hp": 25,
+        "attack": 12,
+        "defense": 10,
+        "speed": 9,
+        "special": 6
+      },
+      "moves": [
+        "ember_swipe",
+        "splash_lash"
+      ],
+      "move_pool": {
+        "15": "ember_swipe"
+      }
+    },
+    "legendary_verdant": {
+      "name": "Verdantus",
+      "types": [
+        "leaf",
+        "storm"
+      ],
+      "tier": 4,
+      "base_stats": {
+        "hp": 40,
+        "attack": 18,
+        "defense": 16,
+        "speed": 14,
+        "special": 6
+      },
+      "moves": [
+        "leaf_rip",
+        "static_bite",
+        "stone_toss"
+      ],
+      "move_pool": {
+        "30": "leaf_rip"
+      }
+    },
+    "legendary_tidal": {
+      "name": "Tidalon",
+      "types": [
+        "water",
+        "frost"
+      ],
+      "tier": 4,
+      "base_stats": {
+        "hp": 42,
+        "attack": 17,
+        "defense": 17,
+        "speed": 12,
+        "special": 6
+      },
+      "moves": [
+        "splash_lash",
+        "frost_nip",
+        "stone_toss"
+      ],
+      "move_pool": {
+        "30": "splash_lash"
+      }
+    },
+    "legendary_ember": {
+      "name": "Pyrothorn",
+      "types": [
+        "ember",
+        "stone"
+      ],
+      "tier": 4,
+      "base_stats": {
+        "hp": 41,
+        "attack": 19,
+        "defense": 16,
+        "speed": 13,
+        "special": 6
+      },
+      "moves": [
+        "ember_swipe",
+        "stone_toss",
+        "leaf_rip"
+      ],
+      "move_pool": {
+        "30": "ember_swipe"
       }
     }
   }

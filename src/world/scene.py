@@ -41,6 +41,7 @@ class WorldScene:
         self.pause_index = 0
         self.save_menu = False
         self.save_index = 0
+        self.card_menu = False
         self.trainer_state = TrainerState()
         self.trainers_data = load_trainers()
         self.encounters = EncounterTracker(ENCOUNTER_RATE)
@@ -128,7 +129,7 @@ class WorldScene:
             if self.encounters.should_trigger():
                 from ..battle.scene import BattleScene
 
-                enemy = roll_wild(zone)
+                enemy = roll_wild(zone, party=self.party)
                 self.game.start_battle(
                     BattleScene(self.game, self.party[0], enemy, inventory=self.inventory)
                 )
@@ -244,8 +245,15 @@ class WorldScene:
         rect = pygame.Rect(60, 40, 120, 80)
         pygame.draw.rect(surface, BLACK, rect)
         pygame.draw.rect(surface, WHITE, rect, 1)
+        if self.card_menu:
+            if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
+                self.card_menu = False
+            return
         if self.save_menu:
             self._draw_save_menu(surface)
+            return
+        if self.card_menu:
+            self._draw_trainer_card(surface)
             return
         if self.party_menu:
             self._draw_party(surface)
@@ -294,11 +302,15 @@ class WorldScene:
                     [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
                 )
 
-    _PAUSE_MENU = ("Monsters", "Save", "Close")
+    _PAUSE_MENU = ("Monsters", "Trainer Card", "Save", "Close")
 
     def _update_pause_menu(self):
         """Handle input while the pause menu is open."""
         pressed = self.game.input.pressed
+        if self.card_menu:
+            if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
+                self.card_menu = False
+            return
         if self.save_menu:
             from ..save import save_game, load_game, SLOT_COUNT
 
@@ -337,6 +349,8 @@ class WorldScene:
             if choice == "Monsters":
                 self.party_menu = True
                 self.party_index = 0
+            elif choice == "Trainer Card":
+                self.card_menu = True
             elif choice == "Save":
                 self.save_menu = True
                 self.save_index = 0
@@ -352,3 +366,20 @@ class WorldScene:
         for i, line in enumerate(lines):
             label = self.font.render(line, False, WHITE, BLACK)
             surface.blit(label, (rect.x + 3, rect.y + 2 + i * 10))
+
+    def _draw_trainer_card(self, surface):
+        """Trainer card: play time, battles won, monsters caught, coins (spec 11)."""
+        minutes = int(self.play_time // 60)
+        lines = [
+            "TRAINER CARD",
+            f"Battles Won: {self.battles_won}",
+            f"Monsters Caught: {self.monsters_caught}",
+            f"Coins: {self.coins}",
+            f"Play Time: {minutes}m",
+        ]
+        rect = pygame.Rect(30, 20, SCREEN_W - 60, 12 * len(lines) + 8)
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        for i, line in enumerate(lines):
+            label = self.font.render(line, False, WHITE, BLACK)
+            surface.blit(label, (rect.x + 6, rect.y + 4 + i * 12))

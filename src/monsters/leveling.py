@@ -29,7 +29,36 @@ def grant_xp(monster, amount, rng=None):
         learned = _learn_move_at_level(monster)
         if learned:
             events.append({"type": "learned_move", "move": learned})
+        evolved = check_evolution(monster)
+        if evolved is not None:
+            events.append({"type": "evolved", "from": monster.species_id, "to": evolved})
     return events
+
+
+def check_evolution(monster, species_table=None):
+    """Evolve at the species' set level. Returns the new species id or None.
+
+    The monster instance is mutated in place: species, name, types, and stats
+    are rebuilt at the new form while keeping HP ratio and known moves.
+    """
+    evo = monster.species.get("evolve_into")
+    if not evo or monster.level < evo["level"]:
+        return None
+    from ..monsters.monster import Monster, load_species, load_moves
+
+    species_table = species_table or load_species()
+    old_name = monster.name
+    hp_ratio = monster.hp / monster.max_hp if monster.max_hp else 1.0
+    moves = monster.moves
+    xp = getattr(monster, "xp", 0)
+
+    new_mon = Monster(evo["species"], monster.level, species_table, load_moves())
+    new_mon.hp = max(1, int(new_mon.max_hp * hp_ratio))
+    new_mon.moves = moves
+    new_mon.xp = xp
+    monster.__dict__.update(new_mon.__dict__)
+    monster.pre_evolution_name = old_name
+    return evo["species"]
 
 
 def _level_up(monster):

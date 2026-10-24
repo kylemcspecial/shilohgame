@@ -223,6 +223,8 @@ class BattleScene:
             for event in events:
                 if event["type"] == "level_up":
                     self.messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
+                elif event["type"] == "evolved":
+                    self.messages.append(f"What? {self.player_mon.pre_evolution_name} evolved into {self.player_mon.name}!")
                 elif event["type"] == "learned_move":
                     move_name = load_moves()[event["move"]]["name"]
                     self.messages.append(f"{self.player_mon.name} learned {move_name}!")
@@ -435,6 +437,8 @@ class TrainerBattle(BattleScene):
             for event in events:
                 if event["type"] == "level_up":
                     self.messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
+                elif event["type"] == "evolved":
+                    self.messages.append(f"What? {self.player_mon.pre_evolution_name} evolved into {self.player_mon.name}!")
                 elif event["type"] == "learned_move":
                     move_name = load_moves()[event["move"]]["name"]
                     self.messages.append(f"{self.player_mon.name} learned {move_name}!")
