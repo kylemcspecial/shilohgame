@@ -256,6 +256,13 @@ class WorldScene:
                     BattleScene(self.game, lead, enemy, inventory=self.inventory)
                 )
 
+    def _rival_at(self, tx, ty):
+        """Rival trainer standing at (tx, ty), if any."""
+        for tid, t in trainers_in_zone(self.zone_id):
+            if t.get("rival") and t["x"] == tx and t["y"] == ty:
+                return tid, t
+        return None
+
     def _trainer_at(self, tx, ty):
         for tid, t in trainers_in_zone(self.zone_id):
             if t["x"] == tx and t["y"] == ty:
@@ -273,6 +280,8 @@ class WorldScene:
         if found is None:
             return
         tid, trainer = found
+        if trainer.get("rival"):
+            return  # rivals (Emmett) are talk-to-battle, never ambushed
         if not self.trainer_state.can_challenge(tid, trainer):
             return
         if self.trainer_state.defeated.get(tid) and not trainer.get("rival"):
@@ -294,6 +303,27 @@ class WorldScene:
             "up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0),
         }[self.player.facing]
         tx, ty = self.player.tile_x + dx, self.player.tile_y + dy
+        rival = self._rival_at(tx, ty)
+        if rival is not None:
+            tid, trainer = rival
+            if self.trainer_state.can_challenge(tid, trainer):
+                self.trainer_state.record_start(tid)
+                from ..battle.scene import TrainerBattle
+
+                lead = self._first_living()
+                if lead is not None:
+                    self.game.start_battle(
+                        TrainerBattle(self.game, lead, tid, trainer, inventory=self.inventory)
+                    )
+                else:
+                    self.heal_and_revive()
+            else:
+                blocked = trainer.get("requires_defeat")
+                if blocked and not self.trainer_state.defeated.get(blocked):
+                    self._flash("Emmett says: catch me in Fernfall later!")
+                else:
+                    self._flash("Emmett is resting. Try again soon!")
+            return
         if self.tile_map.is_healing_lodge(tx, ty):
             self._heal_party()
         elif self.tile_map.tile_at(tx, ty) == "S":
@@ -372,8 +402,16 @@ class WorldScene:
             pygame.draw.circle(surface, (255, 220, 180), (x + 8, y + 3), 2)
 
     def _draw_hud(self, surface):
-        label = self.font.render(self.zone_name, False, WHITE, BLACK)
-        surface.blit(label, (2, 2))
+        """Always-visible HUD: zone, coins, and lead monster HP."""
+        zone = self.font.render(self.zone_name, False, WHITE, BLACK)
+        surface.blit(zone, (2, 2))
+        coins = self.font.render(f"{self.coins}c", False, (255, 230, 140), BLACK)
+        surface.blit(coins, (SCREEN_W - coins.get_width() - 2, 2))
+        lead = self._first_living() or (self.party[0] if self.party else None)
+        if lead is not None:
+            hp = self.font.render(f"{lead.name} {lead.hp}/{lead.max_hp}",
+                                  False, WHITE, BLACK)
+            surface.blit(hp, (2, SCREEN_H - 12))
 
     def _draw_banner(self, surface, text):
         width = 140

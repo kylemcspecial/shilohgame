@@ -3,71 +3,113 @@
     "pineroot_scout": {
       "name": "Scout Maren",
       "zone": "pineroot_crossing",
-      "x": 13, "y": 8,
+      "x": 13,
+      "y": 8,
       "intro": "The pines whisper, but my monsters don't!",
       "defeat": "You listened well to the forest!",
       "reward": 40,
       "team": [
-        {"species": "mossrat", "level": 6},
-        {"species": "brookfin", "level": 7}
+        {
+          "species": "mossrat",
+          "level": 6
+        },
+        {
+          "species": "brookfin",
+          "level": 7
+        }
       ]
     },
     "hollow_forager": {
       "name": "Forager Tam",
       "zone": "mossy_hollow",
-      "x": 5, "y": 5,
+      "x": 5,
+      "y": 5,
       "intro": "My mushrooms are safe. My monsters are NOT!",
       "defeat": "Fair and square. Well hunted!",
       "reward": 80,
       "team": [
-        {"species": "fernpup", "level": 10},
-        {"species": "thornbear", "level": 11}
+        {
+          "species": "fernpup",
+          "level": 10
+        },
+        {
+          "species": "thornbear",
+          "level": 11
+        }
       ]
     },
     "ridge_climber": {
       "name": "Climber Wendel",
       "zone": "thornwood_ridge",
-      "x": 15, "y": 4,
+      "x": 15,
+      "y": 4,
       "intro": "I train on the ridge. Care for a match?",
       "defeat": "The ridge respects you now!",
       "reward": 140,
       "team": [
-        {"species": "fangmoth", "level": 16},
-        {"species": "stonewyrm", "level": 17},
-        {"species": "thornbear", "level": 16}
+        {
+          "species": "fangmoth",
+          "level": 16
+        },
+        {
+          "species": "stonewyrm",
+          "level": 17
+        },
+        {
+          "species": "thornbear",
+          "level": 16
+        }
       ]
     },
     "glade_warden": {
       "name": "Glade Warden Sula",
       "zone": "emberfern_glade",
-      "x": 14, "y": 7,
+      "x": 14,
+      "y": 7,
       "intro": "Few reach the glade. Show me your fire!",
       "defeat": "The glade accepts you, fierce hunter!",
       "reward": 260,
       "team": [
-        {"species": "emberlynx", "level": 26},
-        {"species": "frostpaw", "level": 26},
-        {"species": "stonewyrm", "level": 27}
+        {
+          "species": "emberlynx",
+          "level": 26
+        },
+        {
+          "species": "frostpaw",
+          "level": 26
+        },
+        {
+          "species": "stonewyrm",
+          "level": 27
+        }
       ]
     },
     "emmett_1": {
       "name": "Emmett",
       "zone": "hunters_rest",
-      "x": 6, "y": 9,
-      "intro": "Hey squirt! Race you to the top of the leaderboard!",
+      "x": 6,
+      "y": 9,
+      "intro": "Hey squirt! Think you can take me? Go easy on me, okay?",
       "defeat": "Whoa. Okay, you're getting good at this!",
       "defeat_flag": "emmett_1",
       "reward": 50,
       "rival": true,
       "team": [
-        {"species": "fangmoth", "level": 7},
-        {"species": "mossrat", "level": 6}
+        {
+          "species": "mossrat",
+          "level": 4
+        },
+        {
+          "species": "fangmoth",
+          "level": 5
+        }
       ]
     },
     "emmett_2": {
       "name": "Emmett",
       "zone": "fernfall",
-      "x": 10, "y": 8,
+      "x": 10,
+      "y": 8,
       "intro": "Again? You never quit! Let's see your progress!",
       "defeat": "You've really grown. Better watch MY back!",
       "defeat_flag": "emmett_2",
@@ -75,15 +117,25 @@
       "reward": 150,
       "rival": true,
       "team": [
-        {"species": "thornbear", "level": 14},
-        {"species": "brookfin", "level": 14},
-        {"species": "fangmoth", "level": 15}
+        {
+          "species": "thornbear",
+          "level": 14
+        },
+        {
+          "species": "brookfin",
+          "level": 14
+        },
+        {
+          "species": "fangmoth",
+          "level": 15
+        }
       ]
     },
     "emmett_3": {
       "name": "Emmett",
       "zone": "mossy_hollow_gate",
-      "x": 10, "y": 8,
+      "x": 10,
+      "y": 8,
       "intro": "Final rival match! Winner claims hunter glory!",
       "defeat": "You did it, squirt. You're officially better than me!",
       "defeat_flag": "emmett_3",
@@ -91,16 +143,26 @@
       "reward": 400,
       "rival": true,
       "team": [
-        {"species": "emberlynx", "level": 24},
-        {"species": "stonewyrm", "level": 24},
-        {"species": "frostpaw", "level": 25}
+        {
+          "species": "emberlynx",
+          "level": 24
+        },
+        {
+          "species": "stonewyrm",
+          "level": 24
+        },
+        {
+          "species": "frostpaw",
+          "level": 25
+        }
       ]
     }
   },
   "townsfolk": {
     "pineroot_kid": {
       "zone": "pineroot_crossing",
-      "x": 13, "y": 8,
+      "x": 13,
+      "y": 8,
       "lines": [
         "My sister says Storm monsters zap Leaf ones!",
         "Water beats Ember. Ask anyone at the spring!"
@@ -108,7 +170,8 @@
     },
     "fernfall_granny": {
       "zone": "fernfall",
-      "x": 13, "y": 8,
+      "x": 13,
+      "y": 8,
       "lines": [
         "Weaken a monster before you trap it, dear.",
         "Stout Traps open up when you get stronger!"

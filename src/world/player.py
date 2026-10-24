@@ -18,15 +18,49 @@ class Player:
         self.moving = False
         self.facing = "down"
         self.step_count = 0
-        self.surface = self._build_sprite()
+        self._sprites = self._build_all_sprites()
 
-    def _build_sprite(self):
+    def _build_all_sprites(self):
+        """4 directions x 2 walk frames, SNES-style with outline and shading."""
+        return {facing: [self._build_sprite(facing, step) for step in (0, 1)]
+                for facing in ("down", "up", "left", "right")}
+
+    def _build_sprite(self, facing, step):
+        from ..world.gfx import PALETTES
+
+        outline = (28, 24, 40)
         surface = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
-        pygame.draw.rect(surface, (200, 40, 40), (4, 1, 8, 4))
-        pygame.draw.rect(surface, (255, 220, 180), (5, 5, 6, 4))
-        pygame.draw.rect(surface, (60, 90, 200), (4, 9, 8, 5))
-        pygame.draw.rect(surface, (50, 40, 120), (5, 14, 2, 2))
-        pygame.draw.rect(surface, (50, 40, 120), (9, 14, 2, 2))
+        # leg offsets per walk frame
+        leg_a, leg_b = ((3, 0) if step == 0 else (0, 3))
+        # boots
+        pygame.draw.rect(surface, (80, 52, 30), (5, 13 + leg_a // 2, 3, 3 - leg_a // 2))
+        pygame.draw.rect(surface, (80, 52, 30), (8, 13 + leg_b // 2, 3, 3 - leg_b // 2))
+        # tunic (blue with bevel shading)
+        pygame.draw.rect(surface, outline, (3, 6, 10, 8))
+        pygame.draw.rect(surface, (64, 104, 200), (4, 7, 8, 6))
+        pygame.draw.line(surface, (120, 160, 230), (4, 7), (11, 7), 1)
+        pygame.draw.line(surface, (36, 64, 140), (4, 12), (11, 12), 1)
+        # belt
+        pygame.draw.rect(surface, (180, 140, 60), (4, 11, 8, 1))
+        # arms
+        arm_y = 8 if step == 0 else 9
+        pygame.draw.rect(surface, outline, (2, arm_y, 2, 4))
+        pygame.draw.rect(surface, (64, 104, 200), (2, arm_y + 1, 2, 3))
+        pygame.draw.rect(surface, outline, (12, arm_y, 2, 4))
+        pygame.draw.rect(surface, (64, 104, 200), (12, arm_y + 1, 2, 3))
+        # head with hair
+        pygame.draw.rect(surface, outline, (4, 0, 8, 7))
+        pygame.draw.rect(surface, (255, 222, 180), (5, 2, 6, 4))
+        pygame.draw.rect(surface, (120, 72, 32), (4, 0, 8, 2))  # hair cap
+        # face detail per direction
+        if facing == "down":
+            pygame.draw.rect(surface, (28, 28, 40), (6, 3, 1, 1))
+            pygame.draw.rect(surface, (28, 28, 40), (9, 3, 1, 1))
+        elif facing == "left":
+            pygame.draw.rect(surface, (28, 28, 40), (5, 3, 1, 1))
+        elif facing == "right":
+            pygame.draw.rect(surface, (28, 28, 40), (10, 3, 1, 1))
+        # up: hair covers face, no eyes
         return surface
 
     def try_step(self, dx, dy, tile_map):
@@ -62,7 +96,17 @@ class Player:
             self.try_step(1, 0, tile_map)
 
     def draw(self, surface, camera_x, camera_y):
-        surface.blit(self.surface, (round(self.px - camera_x), round(self.py - camera_y)))
+        import math
+
+        frame = 0
+        if self.moving:
+            frame = int(self.step_count + pygame.time.get_ticks() / 150) % 2
+        sprite = self._sprites[self.facing][frame]
+        # soft shadow
+        shadow = pygame.Surface((TILE_SIZE, 4), pygame.SRCALPHA)
+        pygame.draw.ellipse(shadow, (16, 16, 24, 90), (3, 0, 10, 4))
+        surface.blit(shadow, (round(self.px - camera_x) + 1, round(self.py - camera_y) + 13))
+        surface.blit(sprite, (round(self.px - camera_x), round(self.py - camera_y)))
 
 
 def camera_offset(player_px, player_py, map_width, map_height):

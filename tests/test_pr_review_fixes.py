@@ -142,10 +142,24 @@ def test_lodge_saves_without_manual_slot(tmp_path):
 def test_trainer_battle_not_overridden_by_wild_encounter(tmp_path):
     game = fresh_game(tmp_path)
     world = game.world
-    world.player.tile_x, world.player.tile_y = 6, 8  # adjacent to Emmett
+    world.switch_zone("pineroot_crossing", 13, 9)  # adjacent to Scout Maren (13,8)
+    world.player.tile_x, world.player.tile_y = 13, 9
     world._on_step()
     assert game.scene is not world
     assert game.scene.__class__.__name__ == "TrainerBattle"
+
+
+def test_rival_never_ambushes_but_talk_battles(tmp_path):
+    game = fresh_game(tmp_path)
+    world = game.world
+    world.player.tile_x, world.player.tile_y = 6, 8  # adjacent to Emmett
+    world._on_step()
+    assert game.scene is world, "rivals must not proximity-challenge"
+    # talk to him: face up at (6,8) -> Emmett at (6,9)? emmett_1 is at (6,9)
+    world.player.facing = "down"
+    world._interact()
+    assert game.scene is not world
+    assert game.scene.trainer["name"] == "Emmett"
 
 
 def test_trainers_drawn_in_world(tmp_path):

@@ -1,7 +1,8 @@
-"""Tile definitions and simple programmatic tile rendering."""
+"""Tile definitions and SNES-style procedural tile rendering."""
 import pygame
 
 from ..engine.constants import TILE_SIZE
+from ..world.gfx import PALETTES, dither, bevel, TILE
 
 # Tile behavior flags
 SOLID = "solid"
@@ -9,71 +10,177 @@ TALL_GRASS = "tall_grass"
 DOOR = "door"
 WARP = "warp"
 
-_TileDef = tuple  # (name, solid, tall_grass, warp_target_or_None)
-
 
 class Tileset:
-    """Renders tiles as simple colored squares with small pixel details."""
+    """Renders tiles procedurally with palette shading; caches per char."""
 
     def __init__(self):
         self._cache = {}
 
     def render(self, tile_char):
-        if tile_char in self._cache:
-            return self._cache[tile_char]
-
-        surface = pygame.Surface((TILE_SIZE, TILE_SIZE))
-        base = _BASE_COLORS.get(tile_char, (60, 120, 60))
-        surface.fill(base)
-        _add_detail(surface, tile_char)
-        self._cache[tile_char] = surface
-        return surface
+        if tile_char not in self._cache:
+            self._cache[tile_char] = _build_tile(tile_char)
+        return self._cache[tile_char]
 
 
-_BASE_COLORS = {
-    "T": (34, 80, 34),
-    ".": (72, 128, 72),
-    "G": (60, 150, 60),
-    "P": (72, 128, 72),
-    "R": (168, 140, 96),
-    "#": (200, 120, 80),
-    "H": (220, 190, 120),
-    "S": (180, 160, 200),
-    "D": (120, 80, 50),
-    "N": (72, 128, 72),
+def _build_tile(tile_char):
+    surface = pygame.Surface((TILE_SIZE, TILE_SIZE))
+    painter = _PAINTERS.get(tile_char, _paint_grass)
+    painter(surface)
+    return surface
+
+
+def _paint_grass(surface):
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    # sparse tufts
+    for x, y in ((3, 5), (11, 3), (7, 11), (13, 9)):
+        pygame.draw.line(surface, g["dark"], (x, y + 2), (x, y), 1)
+        pygame.draw.line(surface, g["hi"], (x + 1, y + 2), (x + 1, y + 1), 1)
+
+
+def _paint_tallgrass(surface):
+    g = PALETTES["tallgrass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["dark"], g["mid"], parity=1)
+    # dense blades with motion flicks
+    for x in range(1, TILE - 1, 2):
+        top = 2 if x % 4 else 5
+        pygame.draw.line(surface, g["light"], (x, 15), (x, top))
+        pygame.draw.line(surface, g["hi"], (x + 1, 15), (x + 1, top + 2))
+        pygame.draw.line(surface, g["dark"], (x - 1, 15), (x - 1, top + 3))
+    pygame.draw.line(surface, g["dark"], (0, 15), (15, 15), 1)
+
+
+def _paint_tree(surface):
+    t = PALETTES["tree"]
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    # trunk
+    pygame.draw.rect(surface, t["trunk_mid"], (7, 10, 3, 6))
+    pygame.draw.line(surface, t["trunk_light"], (8, 11), (8, 15))
+    pygame.draw.line(surface, t["trunk_dark"], (9, 11), (9, 15))
+    # canopy: layered blobs, light top-left
+    pygame.draw.circle(surface, t["canopy_mid"], (8, 7), 6)
+    pygame.draw.circle(surface, t["canopy_light"], (6, 5), 4)
+    pygame.draw.circle(surface, t["canopy_mid"], (11, 8), 4)
+    pygame.draw.circle(surface, t["canopy_dark"], (10, 10), 3)
+    pygame.draw.line(surface, t["canopy_light"], (4, 3), (7, 2), 1)
+    # ground shadow
+    pygame.draw.line(surface, g["dark"], (4, 15), (12, 15), 1)
+
+
+def _paint_road(surface):
+    r = PALETTES["road"]
+    surface.fill(r["mid"])
+    dither(surface, (0, 0, TILE, TILE), r["light"], r["mid"])
+    # worn edges
+    pygame.draw.line(surface, r["dark"], (0, 0), (0, 15), 1)
+    pygame.draw.line(surface, r["dark"], (15, 0), (15, 15), 1)
+    # pebbles
+    for x, y in ((4, 4), (10, 7), (6, 12), (12, 2)):
+        pygame.draw.circle(surface, r["stone"], (x, y), 1)
+        pygame.draw.circle(surface, r["dark"], (x + 1, y + 1), 1)
+
+
+def _paint_house(surface):
+    h = PALETTES["house"]
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    # walls with bevel
+    pygame.draw.rect(surface, h["wall_mid"], (0, 4, TILE, 12))
+    bevel(surface, (0, 4, TILE, 12), h["wall_light"], h["wall_dark"])
+    # roofline
+    pygame.draw.rect(surface, h["roof_mid"], (0, 0, TILE, 5))
+    pygame.draw.line(surface, h["roof_light"], (0, 0), (14, 0), 1)
+    pygame.draw.line(surface, h["roof_dark"], (0, 4), (15, 4), 2)
+    # plank texture
+    for y in (7, 11, 15):
+        pygame.draw.line(surface, h["wall_dark"], (0, y), (15, y), 1)
+
+
+def _paint_lodge(surface):
+    h = PALETTES["house"]
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    # red cross emblem building
+    pygame.draw.rect(surface, h["wall_light"], (0, 4, TILE, 12))
+    bevel(surface, (0, 4, TILE, 12), (255, 240, 220), h["wall_dark"])
+    pygame.draw.rect(surface, h["roof_dark"], (0, 0, TILE, 5))
+    pygame.draw.rect(surface, (200, 70, 60), (0, 1, TILE, 3))
+    pygame.draw.line(surface, (150, 50, 44), (0, 4), (15, 4), 1)
+    # cross
+    pygame.draw.rect(surface, (230, 240, 240), (7, 6, 2, 6))
+    pygame.draw.rect(surface, (230, 240, 240), (5, 8, 6, 2))
+    # door
+    pygame.draw.rect(surface, h["door"], (6, 12, 4, 4))
+    pygame.draw.line(surface, (60, 40, 24), (8, 12), (8, 15), 1)
+
+
+def _paint_shop(surface):
+    h = PALETTES["house"]
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    # purple-roofed shop with awning
+    pygame.draw.rect(surface, h["wall_mid"], (0, 4, TILE, 12))
+    bevel(surface, (0, 4, TILE, 12), h["wall_light"], h["wall_dark"])
+    pygame.draw.rect(surface, (110, 88, 150), (0, 0, TILE, 5))
+    pygame.draw.line(surface, (150, 128, 190), (0, 0), (14, 0), 1)
+    # awning stripes
+    for x in range(0, TILE, 4):
+        pygame.draw.rect(surface, (170, 140, 210), (x, 4, 2, 3))
+    # window with glow
+    pygame.draw.rect(surface, (90, 70, 120), (4, 8, 8, 5))
+    pygame.draw.rect(surface, (240, 230, 255), (5, 9, 6, 3))
+    # counter
+    pygame.draw.rect(surface, h["door"], (1, 13, 14, 3))
+    bevel(surface, (1, 13, 14, 3), h["wall_light"], (60, 40, 24))
+
+
+def _paint_door(surface):
+    h = PALETTES["house"]
+    pygame.draw.rect(surface, h["door"], (0, 0, TILE, TILE))
+    # planks + frame + glowing gap at the bottom (it's an exit)
+    for x in range(2, TILE, 4):
+        pygame.draw.line(surface, (70, 46, 28), (x, 0), (x, 15))
+    bevel(surface, (0, 0, TILE, TILE), (130, 92, 56), (48, 32, 20))
+    pygame.draw.rect(surface, (255, 240, 180), (2, 13, 12, 2))
+    pygame.draw.rect(surface, (255, 220, 120), (4, 14, 8, 1))
+
+
+def _paint_npc_tile(surface):
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    # villager silhouette marker (distinct from trainers)
+    pygame.draw.circle(surface, (240, 200, 150), (8, 5), 3)
+    pygame.draw.rect(surface, (170, 120, 90), (5, 8, 6, 6))
+    pygame.draw.line(surface, (120, 84, 60), (5, 14), (10, 14))
+
+
+def _paint_player_start(surface):
+    _paint_grass(surface)
+    g = PALETTES["grass"]
+    pygame.draw.circle(surface, g["hi"], (8, 8), 3, 1)
+
+
+_PAINTERS = {
+    "T": _paint_tree,
+    ".": _paint_grass,
+    "G": _paint_tallgrass,
+    "P": _paint_player_start,
+    "R": _paint_road,
+    "#": _paint_house,
+    "H": _paint_lodge,
+    "S": _paint_shop,
+    "D": _paint_door,
+    "N": _paint_npc_tile,
 }
-
-
-def _add_detail(surface, tile_char):
-    if tile_char == "T":
-        pygame.draw.rect(surface, (20, 50, 20), (0, 0, 16, 6))
-        pygame.draw.rect(surface, (12, 36, 12), (4, 6, 8, 8))
-    elif tile_char == "G":
-        for x in (2, 8, 12):
-            pygame.draw.line(surface, (40, 110, 40), (x, 4), (x, 13))
-            pygame.draw.line(surface, (40, 110, 40), (x, 4), (x - 2, 9))
-            pygame.draw.line(surface, (40, 110, 40), (x, 4), (x + 2, 9))
-    elif tile_char == "#":
-        pygame.draw.rect(surface, (140, 60, 50), (0, 2, 16, 8))
-        pygame.draw.rect(surface, (90, 50, 40), (0, 10, 16, 6))
-    elif tile_char == "H":
-        pygame.draw.rect(surface, (240, 90, 90), (0, 2, 16, 7))
-        pygame.draw.rect(surface, (150, 110, 70), (0, 9, 16, 7))
-        pygame.draw.rect(surface, (255, 240, 200), (6, 11, 4, 5))
-    elif tile_char == "S":
-        pygame.draw.rect(surface, (150, 120, 190), (0, 2, 16, 7))
-        pygame.draw.rect(surface, (110, 90, 140), (0, 9, 16, 7))
-        pygame.draw.rect(surface, (240, 230, 255), (6, 11, 4, 5))
-    elif tile_char == "D":
-        pygame.draw.rect(surface, (90, 55, 30), (0, 0, 16, 16))
-        pygame.draw.rect(surface, (160, 110, 60), (2, 2, 12, 14))
-    elif tile_char == "N":
-        pygame.draw.rect(surface, (200, 90, 60), (6, 3, 4, 4))
-        pygame.draw.rect(surface, (120, 80, 160), (5, 7, 6, 6))
-        pygame.draw.circle(surface, (255, 220, 180), (8, 3), 1)
-    elif tile_char == "R":
-        for x in range(0, 16, 4):
-            pygame.draw.circle(surface, (150, 125, 84), (x, 8), 1)
 
 
 class TileMap:
