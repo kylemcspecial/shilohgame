@@ -138,12 +138,14 @@ class BattleScene:
             self.enemy_mon, item["catch_bonus"], self.player_mon.level
         )
         if success:
+            self.game.audio.catch_success()
             self.caught_monster = self.enemy_mon
             self.messages.append(f"Gotcha! {self.enemy_mon.name} was caught!")
             self.message_index = len(self.messages) - 1
             self.outcome = "caught"
             self.finished = True
         else:
+            self.game.audio.catch_fail()
             self.messages.append("Oh no! It broke free!")
             self.message_index = len(self.messages) - 1
             self._enemy_free_attack()
@@ -217,11 +219,13 @@ class BattleScene:
 
     def _check_outcome(self):
         if self.enemy_mon.fainted:
+            self.game.audio.hit()
             self.messages.append(f"The wild {self.enemy_mon.name} fainted!")
             xp = leveling.xp_for_defeat(self.enemy_mon.level, self.enemy_mon.species["tier"])
             events = leveling.grant_xp(self.player_mon, xp)
             for event in events:
                 if event["type"] == "level_up":
+                    self.game.audio.level_up()
                     self.messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
                 elif event["type"] == "evolved":
                     self.messages.append(f"What? {self.player_mon.pre_evolution_name} evolved into {self.player_mon.name}!")
@@ -436,6 +440,7 @@ class TrainerBattle(BattleScene):
             events = leveling.grant_xp(self.player_mon, xp)
             for event in events:
                 if event["type"] == "level_up":
+                    self.game.audio.level_up()
                     self.messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
                 elif event["type"] == "evolved":
                     self.messages.append(f"What? {self.player_mon.pre_evolution_name} evolved into {self.player_mon.name}!")

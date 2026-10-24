@@ -14,8 +14,20 @@ from src.battle.scene import BattleScene
 from src.battle import battle as battle_mod
 
 
+class FakeAudio:
+    def confirm(self): pass
+    def hit(self): pass
+    def faint(self): pass
+    def catch_success(self): pass
+    def catch_fail(self): pass
+    def level_up(self): pass
+    def heal(self): pass
+
+
 class FakeGame:
     """Minimal stand-in for Game with just a world.party."""
+
+    audio = FakeAudio()
 
     class world:
         party = []

@@ -5,6 +5,7 @@ import pygame
 
 from ..engine.constants import SCREEN_W, SCREEN_H, FPS
 from ..engine import input as input_mod
+from ..engine.audio import Audio
 from ..world.scene import WorldScene
 
 
@@ -20,6 +21,7 @@ class Game:
         self.buffer = pygame.Surface((SCREEN_W, SCREEN_H))
         self.clock = pygame.time.Clock()
         self.input = input_mod.Input()
+        self.audio = Audio()
         self.running = True
         self.world = WorldScene(self)
         self.scene = self.world

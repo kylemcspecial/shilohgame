@@ -26,7 +26,7 @@ python main.py
 - [x] Milestone 5: Healing Lodge, fainting, save/load
 - [x] Milestone 6: Trainers, Emmett arc, zones and towns
 - [x] Milestone 7: Evolution, types, full roster, endless loop
-- [ ] Milestone 8: Audio, polish, Pi 4 tuning
+- [x] Milestone 8: Audio, polish, Pi 4 tuning
 
 ## Layout
 

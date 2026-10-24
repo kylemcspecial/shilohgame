@@ -16,7 +16,19 @@ from src.monsters.monster import Monster, load_species, load_moves
 from src.battle import battle as battle_mod
 
 
+class FakeAudio:
+    def confirm(self): pass
+    def hit(self): pass
+    def faint(self): pass
+    def catch_success(self): pass
+    def catch_fail(self): pass
+    def level_up(self): pass
+    def heal(self): pass
+
+
 class FakeGame:
+    audio = FakeAudio()
+
     class world:
         party = []
 

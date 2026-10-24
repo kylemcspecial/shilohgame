@@ -94,6 +94,7 @@ class WorldScene:
             mon.hp = mon.max_hp
             for mv in mon.moves:
                 mv["pp"] = mv["data"]["pp"]
+        self.game.audio.heal()
         self._flash("Your monsters are fully healed! Game saved.")
         if self.save_slot is not None:
             save_game(self, self.save_slot)
