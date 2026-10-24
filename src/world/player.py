@@ -26,40 +26,39 @@ class Player:
                 for facing in ("down", "up", "left", "right")}
 
     def _build_sprite(self, facing, step):
-        from ..world.gfx import PALETTES
-
+        """Slim hunter, sized like the town NPCs (about 10x14 in a 16px tile)."""
         outline = (28, 24, 40)
         surface = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
         # leg offsets per walk frame
-        leg_a, leg_b = ((3, 0) if step == 0 else (0, 3))
+        leg_a, leg_b = ((2, 0) if step == 0 else (0, 2))
         # boots
-        pygame.draw.rect(surface, (80, 52, 30), (5, 13 + leg_a // 2, 3, 3 - leg_a // 2))
-        pygame.draw.rect(surface, (80, 52, 30), (8, 13 + leg_b // 2, 3, 3 - leg_b // 2))
-        # tunic (blue with bevel shading)
-        pygame.draw.rect(surface, outline, (3, 6, 10, 8))
-        pygame.draw.rect(surface, (64, 104, 200), (4, 7, 8, 6))
-        pygame.draw.line(surface, (120, 160, 230), (4, 7), (11, 7), 1)
-        pygame.draw.line(surface, (36, 64, 140), (4, 12), (11, 12), 1)
+        pygame.draw.rect(surface, (80, 52, 30), (6, 13 + leg_a // 2, 2, 2 - leg_a // 2))
+        pygame.draw.rect(surface, (80, 52, 30), (9, 13 + leg_b // 2, 2, 2 - leg_b // 2))
+        # tunic (blue with bevel shading), slim
+        pygame.draw.rect(surface, outline, (5, 7, 7, 6))
+        pygame.draw.rect(surface, (64, 104, 200), (6, 8, 5, 4))
+        pygame.draw.line(surface, (120, 160, 230), (6, 8), (10, 8), 1)
+        pygame.draw.line(surface, (36, 64, 140), (6, 12), (10, 12), 1)
         # belt
-        pygame.draw.rect(surface, (180, 140, 60), (4, 11, 8, 1))
+        pygame.draw.rect(surface, (180, 140, 60), (6, 11, 5, 1))
         # arms
         arm_y = 8 if step == 0 else 9
-        pygame.draw.rect(surface, outline, (2, arm_y, 2, 4))
-        pygame.draw.rect(surface, (64, 104, 200), (2, arm_y + 1, 2, 3))
-        pygame.draw.rect(surface, outline, (12, arm_y, 2, 4))
-        pygame.draw.rect(surface, (64, 104, 200), (12, arm_y + 1, 2, 3))
+        pygame.draw.rect(surface, outline, (4, arm_y, 1, 3))
+        pygame.draw.rect(surface, (64, 104, 200), (4, arm_y + 1, 1, 2))
+        pygame.draw.rect(surface, outline, (12, arm_y, 1, 3))
+        pygame.draw.rect(surface, (64, 104, 200), (12, arm_y + 1, 1, 2))
         # head with hair
-        pygame.draw.rect(surface, outline, (4, 0, 8, 7))
-        pygame.draw.rect(surface, (255, 222, 180), (5, 2, 6, 4))
-        pygame.draw.rect(surface, (120, 72, 32), (4, 0, 8, 2))  # hair cap
+        pygame.draw.rect(surface, outline, (5, 2, 7, 5))
+        pygame.draw.rect(surface, (255, 222, 180), (6, 3, 5, 4))
+        pygame.draw.rect(surface, (120, 72, 32), (5, 2, 7, 2))  # hair cap
         # face detail per direction
         if facing == "down":
-            pygame.draw.rect(surface, (28, 28, 40), (6, 3, 1, 1))
-            pygame.draw.rect(surface, (28, 28, 40), (9, 3, 1, 1))
+            pygame.draw.rect(surface, (28, 28, 40), (7, 4, 1, 1))
+            pygame.draw.rect(surface, (28, 28, 40), (9, 4, 1, 1))
         elif facing == "left":
-            pygame.draw.rect(surface, (28, 28, 40), (5, 3, 1, 1))
+            pygame.draw.rect(surface, (28, 28, 40), (6, 4, 1, 1))
         elif facing == "right":
-            pygame.draw.rect(surface, (28, 28, 40), (10, 3, 1, 1))
+            pygame.draw.rect(surface, (28, 28, 40), (10, 4, 1, 1))
         # up: hair covers face, no eyes
         return surface
 

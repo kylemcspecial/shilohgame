@@ -34,24 +34,24 @@
       },
       "warps": [
         {
-          "x": 5,
+          "x": 6,
           "y": 12,
           "zone": "whispering_pines",
-          "tx": 18,
+          "tx": 10,
           "ty": 11
         },
         {
           "x": 9,
           "y": 12,
           "zone": "whispering_pines",
-          "tx": 18,
+          "tx": 10,
           "ty": 11
         },
         {
           "x": 12,
           "y": 12,
           "zone": "whispering_pines",
-          "tx": 18,
+          "tx": 10,
           "ty": 11
         }
       ]
@@ -73,7 +73,7 @@
         "T..GGG.........GG..T",
         "T...G.....D......G.T",
         "T........D.........T",
-        "TT................TT",
+        "TT.......D........TT",
         "TTT..............TTT",
         "TTTTTTTTTTTTTTTTTTTT"
       ],
@@ -89,32 +89,18 @@
           "x": 10,
           "y": 10,
           "zone": "hunters_rest",
-          "tx": 5,
+          "tx": 6,
           "ty": 11
         },
         {
           "x": 9,
           "y": 11,
           "zone": "hunters_rest",
-          "tx": 5,
+          "tx": 6,
           "ty": 11
         },
         {
-          "x": 4,
-          "y": 12,
-          "zone": "pineroot_crossing",
-          "tx": 9,
-          "ty": 11
-        },
-        {
-          "x": 5,
-          "y": 12,
-          "zone": "pineroot_crossing",
-          "tx": 9,
-          "ty": 11
-        },
-        {
-          "x": 6,
+          "x": 9,
           "y": 12,
           "zone": "pineroot_crossing",
           "tx": 9,
@@ -173,32 +159,32 @@
       },
       "warps": [
         {
-          "x": 9,
+          "x": 6,
           "y": 11,
           "zone": "whispering_pines",
-          "tx": 5,
+          "tx": 10,
           "ty": 11
         },
         {
-          "x": 5,
+          "x": 6,
           "y": 12,
           "zone": "mossy_hollow",
-          "tx": 8,
-          "ty": 10
+          "tx": 9,
+          "ty": 11
         },
         {
           "x": 9,
           "y": 12,
           "zone": "mossy_hollow",
-          "tx": 8,
-          "ty": 10
+          "tx": 9,
+          "ty": 11
         },
         {
           "x": 12,
           "y": 12,
           "zone": "mossy_hollow",
-          "tx": 8,
-          "ty": 10
+          "tx": 9,
+          "ty": 11
         }
       ]
     },
@@ -233,23 +219,16 @@
       "warps": [
         {
           "x": 8,
-          "y": 10,
+          "y": 11,
           "zone": "pineroot_crossing",
           "tx": 9,
           "ty": 11
         },
         {
-          "x": 4,
-          "y": 12,
+          "x": 10,
+          "y": 11,
           "zone": "fernfall",
-          "tx": 9,
-          "ty": 11
-        },
-        {
-          "x": 5,
-          "y": 12,
-          "zone": "fernfall",
-          "tx": 9,
+          "tx": 7,
           "ty": 11
         }
       ],
@@ -302,21 +281,14 @@
       "warps": [
         {
           "x": 8,
-          "y": 10,
+          "y": 11,
           "zone": "fernfall",
-          "tx": 9,
+          "tx": 7,
           "ty": 11
         },
         {
-          "x": 4,
-          "y": 12,
-          "zone": "mossy_hollow_gate",
-          "tx": 9,
-          "ty": 11
-        },
-        {
-          "x": 5,
-          "y": 12,
+          "x": 10,
+          "y": 11,
           "zone": "mossy_hollow_gate",
           "tx": 9,
           "ty": 11
@@ -375,32 +347,32 @@
       },
       "warps": [
         {
-          "x": 9,
+          "x": 6,
           "y": 11,
           "zone": "mossy_hollow",
-          "tx": 5,
+          "tx": 9,
           "ty": 11
         },
         {
-          "x": 5,
+          "x": 6,
           "y": 12,
           "zone": "thornwood_ridge",
-          "tx": 8,
-          "ty": 10
+          "tx": 9,
+          "ty": 11
         },
         {
           "x": 9,
           "y": 12,
           "zone": "thornwood_ridge",
-          "tx": 8,
-          "ty": 10
+          "tx": 9,
+          "ty": 11
         },
         {
           "x": 12,
           "y": 12,
           "zone": "thornwood_ridge",
-          "tx": 8,
-          "ty": 10
+          "tx": 9,
+          "ty": 11
         }
       ]
     },
@@ -435,7 +407,14 @@
       "warps": [
         {
           "x": 8,
-          "y": 10,
+          "y": 11,
+          "zone": "mossy_hollow_gate",
+          "tx": 9,
+          "ty": 11
+        },
+        {
+          "x": 10,
+          "y": 11,
           "zone": "mossy_hollow_gate",
           "tx": 9,
           "ty": 11
@@ -493,31 +472,31 @@
       },
       "warps": [
         {
-          "x": 9,
+          "x": 6,
           "y": 11,
           "zone": "thornwood_ridge",
-          "tx": 5,
+          "tx": 9,
           "ty": 11
         },
         {
-          "x": 5,
+          "x": 6,
           "y": 12,
           "zone": "emberfern_glade",
-          "tx": 8,
+          "tx": 7,
           "ty": 10
         },
         {
           "x": 9,
           "y": 12,
           "zone": "emberfern_glade",
-          "tx": 8,
+          "tx": 7,
           "ty": 10
         },
         {
           "x": 12,
           "y": 12,
           "zone": "emberfern_glade",
-          "tx": 8,
+          "tx": 7,
           "ty": 10
         }
       ]

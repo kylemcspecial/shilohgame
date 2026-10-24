@@ -6,6 +6,7 @@ import pygame
 from ..engine.constants import SCREEN_W, SCREEN_H, FPS
 from ..engine import input as input_mod
 from ..engine.audio import Audio
+from ..engine.fonts import get_font
 from ..world.scene import WorldScene
 
 
@@ -25,7 +26,7 @@ class Game:
         self.running = True
         self.world = WorldScene(self)
         self.scene = self.world
-        self.font = pygame.font.Font(pygame.font.get_default_font(), 8)
+        self.font = get_font(8)
 
     def start_battle(self, battle_scene):
         self.scene = battle_scene
