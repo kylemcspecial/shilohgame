@@ -37,7 +37,9 @@ python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)' \
 
 if [[ ! -d "$VENV_DIR" ]]; then
   say "Creating virtual environment ($VENV_DIR)"
-  python3 -m venv "$VENV_DIR" || die "venv creation failed —install python3-venv: sudo apt install python3-venv"
+  if ! python3 -m venv "$VENV_DIR"; then
+    die "venv creation failed. Run:  sudo apt install -y python3-venv  then rerun this script."
+  fi
 fi
 
 say "Installing dependencies (pygame-ce, numpy)"
