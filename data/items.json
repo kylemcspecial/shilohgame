@@ -1,0 +1,17 @@
+{
+  "items": {
+    "basic_trap": {"name": "Basic Trap", "kind": "trap", "catch_bonus": 1.0, "cost": 20},
+    "stout_trap": {"name": "Stout Trap", "kind": "trap", "catch_bonus": 1.5, "cost": 60},
+    "high_trap": {"name": "High Trap", "kind": "trap", "catch_bonus": 2.0, "cost": 150},
+    "ultra_trap": {"name": "Ultra Trap", "kind": "trap", "catch_bonus": 3.0, "cost": 400},
+    "potion_s": {"name": "Small Potion", "kind": "potion", "heal": 15, "cost": 30},
+    "potion_m": {"name": "Medium Potion", "kind": "potion", "heal": 35, "cost": 80},
+    "berry": {"name": "Berry", "kind": "berry", "pp_restore": 5, "cost": 25}
+  },
+  "trap_unlocks": {
+    "basic_trap": 1,
+    "stout_trap": 10,
+    "high_trap": 25,
+    "ultra_trap": 40
+  }
+}
