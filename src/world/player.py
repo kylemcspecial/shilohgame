@@ -66,6 +66,9 @@ class Player:
 
 
 def camera_offset(player_px, player_py, map_width, map_height):
+    """Integer pixel offset of the camera (floats break tile-range math)."""
+    player_px = int(player_px)
+    player_py = int(player_py)
     cam_x = player_px - (SCREEN_W - TILE_SIZE) // 2
     cam_y = player_py - (SCREEN_H - TILE_SIZE) // 2
     max_x = map_width * TILE_SIZE - SCREEN_W
@@ -78,4 +81,4 @@ def camera_offset(player_px, player_py, map_width, map_height):
         cam_y = max_y // 2
     else:
         cam_y = max(0, min(cam_y, max_y))
-    return cam_x, cam_y
+    return int(cam_x), int(cam_y)

@@ -3,33 +3,35 @@
 A retro 2D top-down monster-catching RPG for an 8-year-old hunter.
 Built with Python + pygame-ce. Target platform: Raspberry Pi 4 (Twister OS).
 
-## Install on Raspberry Pi
+## Install on Raspberry Pi — one command
 
-One-time setup on the Pi (Twister OS / Raspberry Pi OS) — **use this, not pip**:
+Copy-paste this whole line on the Pi (Twister OS / Raspberry Pi OS):
 
 ```bash
-sudo apt install -y python3-venv   # only if the installer says it's missing
-bash install-pi.sh
+git clone https://github.com/kylemcspecial/shilohgame.git && cd shilohgame && bash install
 ```
 
-The installer creates a dedicated virtual environment (so no PEP 668
-"externally managed environment" errors), installs pygame-ce and numpy,
-generates the game icon, and adds a launcher — find the game under
-**Menu > Games > Fierce Monster Hunter**, plus a shortcut on the desktop.
-Saves live in `~/.local/share/fierce-monster-hunter/saves` and are untouched
-by `bash install-pi.sh --uninstall`.
+That's the entire setup. It clones the game, makes sure `python3-venv`
+is installed (asking for sudo only if needed), creates a dedicated virtual
+environment (so no PEP 668 "externally managed environment" errors), pulls
+pygame-ce and numpy, generates the icon, and puts **Fierce Monster Hunter**
+on the desktop and under **Menu > Games**. From then on, Shiloh just clicks
+the icon.
+
+To remove it later: `bash install --uninstall` (saves are kept in
+`~/.local/share/fierce-monster-hunter/saves`).
 
 ### Troubleshooting
 
 - **"externally managed environment" from pip**: Raspberry Pi OS (Bookworm+)
 marks the system Python as externally managed. Don't install system-wide —
-run `bash install-pi.sh` (or `--break-system-packages` only as a last resort).
+`bash install` uses its own venv.
 - **"unsupported file given on command line" or `$'\r': command not found`**:
-the script file was mangled in transit (CRLF line endings). Fix with
-`sed -i 's/\r$//' install-pi.sh && bash install-pi.sh`, or re-clone:
-`git clone https://github.com/kylemcspecial/shilohgame.git && cd shilohgame`.
-- **venv creation fails**: `sudo apt install -y python3-venv`, then rerun the
-installer.
+the script was mangled in transit (CRLF line endings — shouldn't happen via
+git clone). Fix with `sed -i 's/\r$//' install && bash install`.
+- **venv creation fails**: the installer tries to install `python3-venv`
+itself; if sudo wasn't available, run `sudo apt install -y python3-venv`
+and rerun `bash install`.
 
 ## Run (other systems)
 
