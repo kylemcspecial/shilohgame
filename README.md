@@ -58,6 +58,7 @@ python3 -m venv .venv
 - [x] Milestone 6: Trainers, Emmett arc, zones and towns
 - [x] Milestone 7: Evolution, types, full roster, endless loop
 - [x] Milestone 8: Audio, polish, Pi 4 tuning
+- [x] Bag: potions heal, berries restore PP (usable in battle, sold at the shop)
 
 ## Layout
 

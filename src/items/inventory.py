@@ -35,5 +35,10 @@ class Inventory:
         return [(iid, d) for iid, d in self.items.items()
                 if d["kind"] == "trap" and self.counts.get(iid, 0) > 0]
 
+    def usables(self):
+        """Owned consumables the Bag can use in battle (potions, berries)."""
+        return [(iid, d) for iid, d in self.items.items()
+                if d["kind"] in ("potion", "berry") and self.counts.get(iid, 0) > 0]
+
     def name(self, item_id):
         return self.items[item_id]["name"]

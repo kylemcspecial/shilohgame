@@ -10,7 +10,7 @@ from ..battle import catch as catch_mod
 from ..monsters.monster import Monster, load_species, load_moves, load_type_chart
 from ..monsters import leveling
 
-_MENU = ("Fight", "Catch", "Switch", "Run")
+_MENU = ("Fight", "Bag", "Catch", "Switch", "Run")
 
 
 class BattleScene:
@@ -33,6 +33,8 @@ class BattleScene:
         self.caught_monster = None
         self.trap_menu = False
         self.trap_index = 0
+        self.bag_menu = False
+        self.bag_index = 0
         self.shake_timer = 0.0
         self.party = list(getattr(game.world, "party", [player_monster]))
         self.switch_menu = False
@@ -159,6 +161,19 @@ class BattleScene:
             elif input_mod.CANCEL in pressed:
                 self.trap_menu = False
             return
+        if self.bag_menu:
+            available = self.inventory.usables()
+            if not available:
+                self.bag_menu = False
+            elif input_mod.UP in pressed or input_mod.LEFT in pressed:
+                self.bag_index = (self.bag_index - 1) % len(available)
+            elif input_mod.DOWN in pressed or input_mod.RIGHT in pressed:
+                self.bag_index = (self.bag_index + 1) % len(available)
+            elif input_mod.CONFIRM in pressed:
+                self._use_item(available[self.bag_index][0], available[self.bag_index][1])
+            elif input_mod.CANCEL in pressed:
+                self.bag_menu = False
+            return
         if self.finished:
             if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
                 self.game.end_battle()
@@ -194,6 +209,13 @@ class BattleScene:
             self.trap_menu = True
             self.trap_index = 0
             return
+        if command == "Bag":
+            if not self.inventory.usables():
+                self._append_messages(["Your bag is empty!"])
+                return
+            self.bag_menu = True
+            self.bag_index = 0
+            return
         self.move_menu = True
         self.move_index = 0
 
@@ -226,6 +248,40 @@ class BattleScene:
             self.game.audio.catch_fail()
             self._append_messages(["Oh no! It broke free!"])
             self._enemy_free_attack()
+
+    def _use_item(self, item_id, item):
+        """Use a potion or berry on the active monster; enemy gets a free attack."""
+        self._confirmed = True
+        self.bag_menu = False
+        target = self.player_mon
+        if item["kind"] == "potion":
+            healed = min(item["heal"], target.max_hp - target.hp)
+            if healed <= 0:
+                self._append_messages([f"{target.name} is already at full health!"])
+                return
+            self.inventory.remove(item_id)
+            target.hp += healed
+            self.game.audio.heal()
+            self._append_messages([
+                f"You used a {item['name']}!",
+                f"{target.name} recovered {healed} HP!",
+            ])
+        elif item["kind"] == "berry":
+            low_pp = [mv for mv in target.moves if mv["pp"] < mv["data"]["pp"]]
+            if not low_pp:
+                self._append_messages([f"{target.name} has full PP already!"])
+                return
+            self.inventory.remove(item_id)
+            for mv in low_pp:
+                mv["pp"] = min(mv["data"]["pp"], mv["pp"] + item["pp_restore"])
+            self.game.audio.heal()
+            self._append_messages([
+                f"You used a {item['name']}!",
+                f"{target.name} feels refreshed!",
+            ])
+        else:
+            return
+        self._enemy_free_attack()
 
     def _take_turn(self, player_move):
         player_first = battle_mod.goes_first(self.player_mon, self.enemy_mon)
@@ -347,11 +403,13 @@ class BattleScene:
         if self.move_menu:
             self._draw_move_menu(surface)
             return
-        if self.switch_menu or self.trap_menu:
+        if self.switch_menu or self.trap_menu or self.bag_menu:
             if self.switch_menu:
                 self._draw_switch_menu(surface)
-            else:
+            elif self.trap_menu:
                 self._draw_trap_menu(surface)
+            else:
+                self._draw_bag_menu(surface)
         elif self.message_index >= len(self.messages) - 1:
             self._draw_menu(surface)
 
@@ -440,7 +498,8 @@ class BattleScene:
     def _draw_menu(self, surface):
         row_h = 11
         height = row_h * len(_MENU) + 3
-        rect = pygame.Rect(SCREEN_W - 64, SCREEN_H - 26 - (height - 26), 64, height)
+        width = max(58, max(self.font.size(option)[0] + 14 for option in _MENU))
+        rect = pygame.Rect(SCREEN_W - width, SCREEN_H - height - 2, width, height)
         rect.y = SCREEN_H - height - 2
         pygame.draw.rect(surface, BLACK, rect)
         pygame.draw.rect(surface, WHITE, rect, 1)
@@ -509,6 +568,26 @@ class BattleScene:
             y = rect.y + 1 + i * 11
             surface.blit(label, (rect.x + 10, y))
             if i == self.trap_index:
+                pygame.draw.polygon(
+                    surface, WHITE,
+                    [(rect.x + 3, y + 4), (rect.x + 8, y + 7), (rect.x + 3, y + 10)],
+                )
+
+    def _draw_bag_menu(self, surface):
+        """Bag picker: potions and berries with counts, drawn like the trap menu."""
+        available = self.inventory.usables()
+        rect = pygame.Rect(
+            SCREEN_W - 84, SCREEN_H - 26 - 11 * len(available), 84, 11 * len(available) + 2
+        )
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        for i, (item_id, item) in enumerate(available):
+            label = self.font.render(
+                f"{item['name']} x{self.inventory.count(item_id)}", False, WHITE, BLACK
+            )
+            y = rect.y + 1 + i * 11
+            surface.blit(label, (rect.x + 10, y))
+            if i == self.bag_index:
                 pygame.draw.polygon(
                     surface, WHITE,
                     [(rect.x + 3, y + 4), (rect.x + 8, y + 7), (rect.x + 3, y + 10)],
