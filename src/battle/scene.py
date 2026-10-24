@@ -11,7 +11,6 @@ from ..monsters.monster import Monster, load_species, load_moves, load_type_char
 from ..monsters import leveling
 
 _MENU = ("Fight", "Catch", "Switch", "Run")
-_TRAP_MENU_ITEMS = ["Basic Trap", "Stout Trap", "High Trap", "Ultra Trap"]
 
 
 class BattleScene:
@@ -48,12 +47,13 @@ class BattleScene:
 
     def _xp_messages(self, xp):
         """Apply XP and build level-up/evolution/learned-move messages."""
+        name_before = self.player_mon.name
         events = leveling.grant_xp(self.player_mon, xp)
         messages = []
         for event in events:
             if event["type"] == "level_up":
                 self.game.audio.level_up()
-                messages.append(f"{self.player_mon.name} grew to level {event['level']}!")
+                messages.append(f"{name_before} grew to level {event['level']}!")
             elif event["type"] == "evolved":
                 messages.append(
                     f"What? {self.player_mon.pre_evolution_name} evolved into {self.player_mon.name}!"
@@ -66,6 +66,8 @@ class BattleScene:
     # ------------------------------------------------------------------ input
 
     def update(self, dt):
+        if self.shake_timer > 0:
+            self.shake_timer -= dt
         if self.intro_timer > 0:
             self.intro_timer -= dt
             return
@@ -209,12 +211,18 @@ class BattleScene:
         return None
 
     def _do_switch(self, new_mon):
-        """Switch active monster; switching always goes before the enemy attack."""
+        """Switch active monster; voluntary switching gives the enemy a free attack."""
+        forced = self.force_switch
         self.player_mon = new_mon
         self.switch_menu = False
         self.force_switch = False
         self._append_messages([f"Go, {new_mon.name}!"])
-        if not self.finished and not self.player_mon.fainted and not self.enemy_mon.fainted:
+        if (
+            not forced
+            and not self.finished
+            and not self.player_mon.fainted
+            and not self.enemy_mon.fainted
+        ):
             self._enemy_free_attack()
 
     def _try_run(self):
@@ -288,8 +296,6 @@ class BattleScene:
     def _draw_mon(self, surface, mon, pos, back):
         size = 32
         x, y = pos
-        if back:
-            x += math.sin(pygame.time.get_ticks() / 200.0) * 0  # stable; kept simple
         sprite = pygame.Surface((size, size), pygame.SRCALPHA)
         color = _MON_COLORS.get(mon.types[0], (200, 200, 200))
         pygame.draw.ellipse(sprite, color, (0, 8, 32, 24))
@@ -379,7 +385,6 @@ class BattleScene:
         """Draw a wobbling trap over the enemy monster while shaking."""
         if self.shake_timer <= 0:
             return
-        self.shake_timer -= 1 / 60.0
         wobble = math.sin(pygame.time.get_ticks() / 60.0) * 3
         x = SCREEN_W - 52 + 16 + wobble
         y = 14 + 16

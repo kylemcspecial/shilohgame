@@ -329,7 +329,7 @@ class WorldScene:
                 self.card_menu = False
             return
         if self.save_menu:
-            from ..save import save_game, load_game, SLOT_COUNT
+            from ..save import save_game, SLOT_COUNT
 
             if input_mod.UP in pressed:
                 self.save_index = (self.save_index - 1) % SLOT_COUNT
