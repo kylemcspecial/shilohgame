@@ -7,12 +7,11 @@ NOT_VERY_EFFECTIVE = 0.5
 
 
 def type_multiplier(move_type, target_types, type_chart):
+    """Spec chart: attacker type beats listed defender types (2x). Neutral otherwise."""
     multiplier = 1.0
     for target_type in target_types:
         if target_type in type_chart.get(move_type, []):
             multiplier *= SUPER_EFFECTIVE
-        elif target_type in type_chart and move_type in type_chart[target_type]:
-            multiplier *= NOT_VERY_EFFECTIVE
     return multiplier
 
 

@@ -47,7 +47,7 @@ def test_controller_lifecycle_uses_instance_ids(monkeypatch, pygame_runtime):
 def test_window_close_releases_pygame(pygame_runtime):
     game = Game()
     pygame.event.post(pygame.event.Event(pygame.QUIT))
-    game.run()
+    game.run(title=False)
     assert not game.running
     assert not pygame.get_init()
 
@@ -58,7 +58,7 @@ def test_render_failure_releases_pygame(monkeypatch, pygame_runtime):
         raise RuntimeError('render failed')
     monkeypatch.setattr(game.scene, 'draw', fail)
     with pytest.raises(RuntimeError, match='render failed'):
-        game.run()
+        game.run(title=False)
     assert not pygame.get_init()
 
 

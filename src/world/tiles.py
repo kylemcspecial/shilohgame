@@ -40,6 +40,7 @@ _BASE_COLORS = {
     "H": (220, 190, 120),
     "S": (180, 160, 200),
     "D": (120, 80, 50),
+    "N": (72, 128, 72),
 }
 
 
@@ -66,6 +67,10 @@ def _add_detail(surface, tile_char):
     elif tile_char == "D":
         pygame.draw.rect(surface, (90, 55, 30), (0, 0, 16, 16))
         pygame.draw.rect(surface, (160, 110, 60), (2, 2, 12, 14))
+    elif tile_char == "N":
+        pygame.draw.rect(surface, (200, 90, 60), (6, 3, 4, 4))
+        pygame.draw.rect(surface, (120, 80, 160), (5, 7, 6, 6))
+        pygame.draw.circle(surface, (255, 220, 180), (8, 3), 1)
     elif tile_char == "R":
         for x in range(0, 16, 4):
             pygame.draw.circle(surface, (150, 125, 84), (x, 8), 1)
@@ -99,6 +104,9 @@ class TileMap:
 
     def is_tall_grass(self, tx, ty):
         return self.tile_at(tx, ty) == "G"
+
+    def is_healing_lodge(self, tx, ty):
+        return self.tile_at(tx, ty) == "H"
 
     def is_door(self, tx, ty):
         return self.tile_at(tx, ty) == "D"

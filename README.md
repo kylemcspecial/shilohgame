@@ -5,10 +5,26 @@ Built with Python + pygame-ce. Target platform: Raspberry Pi 4 (Twister OS).
 
 ## Run
 
+Quick start:
+
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
+
+## Install on Raspberry Pi (recommended)
+
+One-time setup on the Pi (Twister OS / Raspberry Pi OS):
+
+```bash
+./install-pi.sh
+```
+
+This creates a dedicated virtual environment, installs pygame-ce and numpy,
+generates the game icon, and adds a launcher — find the game under
+**Menu > Games > Fierce Monster Hunter**, plus a shortcut on the desktop.
+Saves live in `~/.local/share/fierce-monster-hunter/saves` and are untouched
+by `./install-pi.sh --uninstall`.
 
 - Arrows / WASD: move
 - Z / Space: confirm
@@ -21,12 +37,12 @@ python main.py
 
 - [x] Milestone 1: Window, integer scaling, input, walkable home base (Hunter's Rest)
 - [x] Milestone 2: Random encounters in Whispering Pines + basic battle
-- [ ] Milestone 3: Catching with traps
-- [ ] Milestone 4: Leveling, moves, party, storage
-- [ ] Milestone 5: Healing Lodge, fainting, save/load
-- [ ] Milestone 6: Trainers, Emmett arc, zones and towns
-- [ ] Milestone 7: Evolution, types, full roster, endless loop
-- [ ] Milestone 8: Audio, polish, Pi 4 tuning
+- [x] Milestone 3: Catching with traps
+- [x] Milestone 4: Leveling, moves, party, storage
+- [x] Milestone 5: Healing Lodge, fainting, save/load
+- [x] Milestone 6: Trainers, Emmett arc, zones and towns
+- [x] Milestone 7: Evolution, types, full roster, endless loop
+- [x] Milestone 8: Audio, polish, Pi 4 tuning
 
 ## Layout
 
