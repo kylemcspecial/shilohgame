@@ -23,6 +23,8 @@ def serialize(world):
     return {
         "version": _VERSION,
         "zone_id": world.zone_id,
+        "player_name": getattr(world, "player_name", "Hunter"),
+        "rival_name": getattr(world, "rival_name", "Emmett"),
         "player": {"tile_x": world.player.tile_x, "tile_y": world.player.tile_y},
         "coins": world.coins,
         "battles_won": world.battles_won,
@@ -147,6 +149,8 @@ def apply_save(world, data):
     world.player.py = world.player.tile_y * TILE_SIZE
     world.player.moving = False
     world.coins = data.get("coins", 0)
+    world.player_name = data.get("player_name", "Hunter")
+    world.rival_name = data.get("rival_name", "Emmett")
     world.battles_won = data.get("battles_won", 0)
     world.monsters_caught = data.get("monsters_caught", 0)
     world.play_time = data.get("play_time", 0.0)

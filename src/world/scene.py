@@ -27,6 +27,17 @@ def _reset_battle_boosts(mon):
 
 ENCOUNTER_RATE = 0.125  # ~1 in 8 steps in tall grass
 
+# Zone progression chain: zone -> (next zone, leader guarding the exit to it).
+# Forward exits are badge-gated; going back is always allowed.
+_ZONE_CHAIN = {
+    "whispering_pines": ("pineroot_crossing", "fenwick"),
+    "pineroot_crossing": ("mossy_hollow", "boulder"),
+    "mossy_hollow": ("fernfall", "ivy"),
+    "fernfall": ("thornwood_ridge", "hazel"),
+    "thornwood_ridge": ("mossy_hollow_gate", "rex"),
+    "mossy_hollow_gate": ("emberfern_glade", "bram"),
+}
+
 
 def load_zones():
     with open(os.path.join(_DATA_DIR, "zones.json")) as f:
@@ -34,8 +45,11 @@ def load_zones():
 
 
 class WorldScene:
-    def __init__(self, game):
+    def __init__(self, game, intro=None):
         self.game = game
+        self.player_name = (intro or {}).get("player", "Hunter")
+        self.rival_name = (intro or {}).get("rival", "Emmett")
+        starter_id = (intro or {}).get("starter", "fernpup")
         zones = load_zones()
         self.zones = zones["zones"]
         self.tileset = Tileset()
@@ -52,6 +66,8 @@ class WorldScene:
         self.save_menu = False
         self.save_index = 0
         self.card_menu = False
+        self.storage_menu = False
+        self.storage_index = 0
         self.shop_menu = False
         self.shop_index = 0
         self._pending_save_message = None
@@ -61,11 +77,12 @@ class WorldScene:
         self.inventory = Inventory({"basic_trap": 5, "potion_s": 3, "berry": 2})
         species_table = load_species()
         move_table = load_moves()
-        self.party = [Monster("fernpup", 5, species_table, move_table)]
+        self.party = [Monster(starter_id, 5, species_table, move_table)]
         self.storage = []
         self.coins = 60
         self.battles_won = 0
         self.monsters_caught = 0
+        self.badges = []
         self.play_time = 0.0
         self.message = None
         self.message_timer = 0.0
@@ -110,22 +127,29 @@ class WorldScene:
         self.shop_menu = True
         self.shop_index = 0
 
+    _BADGE_SHOP_UNLOCKS = {
+        "stout_trap": "pine",
+        "potion_m": "stone",
+        "high_trap": "gale",
+        "ultra_trap": "thorn",
+    }
+
     def _shop_available(self):
-        """Shop entries with prices; traps unlock by level, consumables always stocked."""
+        """Shop entries with prices; rare stock unlocks by badge, not level."""
         from ..items.inventory import load_items
 
         items = load_items()
-        unlocks = self._load_trap_unlocks()
+        badges = self.badge_ids
         entries = []
         for item_id in self._SHOP_ITEMS:
             item = items[item_id]
-            unlock = unlocks.get(item_id, 1)
+            needed = self._BADGE_SHOP_UNLOCKS.get(item_id)
             entries.append({
                 "id": item_id,
                 "name": item["name"],
                 "cost": item["cost"],
-                "unlocked": self.player_level >= unlock,
-                "unlock_level": unlock,
+                "unlocked": needed is None or needed in badges,
+                "unlock_badge": needed,
             })
         return entries
 
@@ -138,7 +162,13 @@ class WorldScene:
 
     def _buy(self, entry):
         if not entry["unlocked"]:
-            self._flash(f"{entry['name']} unlocks at level {entry['unlock_level']}!")
+            needed = entry["unlock_badge"]
+            badge_name = next(
+                (t["badge_name"] for t in self.trainers_data["trainers"].values()
+                 if t.get("badge") == needed),
+                "a badge",
+            )
+            self._flash(f"{entry['name']} unlocks with the {badge_name}!")
             return
         if self.coins < entry["cost"]:
             self._flash("Not enough coins!")
@@ -162,7 +192,7 @@ class WorldScene:
             self.shop_menu = False
 
     def _draw_shop(self, surface):
-        """Trap Shop list with prices and lock levels (spec 7.2)."""
+        """Trap Shop list with prices and badge locks."""
         entries = self._shop_available()
         row_h = 14
         rect = pygame.Rect(30, 14, SCREEN_W - 60, row_h * len(entries) + 16)
@@ -172,7 +202,15 @@ class WorldScene:
         surface.blit(title, (rect.centerx - title.get_width() // 2, rect.y + 3))
         for i, entry in enumerate(entries):
             y = rect.y + 14 + i * row_h
-            status = f"{entry['cost']}c" if entry["unlocked"] else f"Lv{entry['unlock_level']}"
+            if entry["unlocked"]:
+                status = f"{entry['cost']}c"
+            else:
+                needed = entry["unlock_badge"]
+                status = next(
+                    (t["badge_name"].split()[0] for t in self.trainers_data["trainers"].values()
+                     if t.get("badge") == needed),
+                    "Badge",
+                )
             color = WHITE if entry["unlocked"] else (120, 120, 120)
             label = self.font.render(f"{entry['name']} {status}", False, color, BLACK)
             surface.blit(label, (rect.x + 10, y))
@@ -222,6 +260,19 @@ class WorldScene:
         self.message = text
         self.message_timer = 2.5
 
+    def on_badge_won(self, badge_id):
+        """Award a badge: record it, triple-coin payout, unlock message."""
+        if badge_id in getattr(self, "_badges_awarded", ()):
+            return
+        self._badges_awarded = list(getattr(self, "_badges_awarded", ())) + [badge_id]
+        trainer = next(
+            t for t in self.trainers_data["trainers"].values()
+            if t.get("badge") == badge_id
+        )
+        self.coins += trainer["reward"] * 3
+        self.game.audio.catch_success()
+        self._flash(f"You earned the {trainer['badge_name']}! (+{trainer['reward'] * 3} coins)")
+
     def heal_and_revive(self):
         """Called after a total-party faint: warp home, heal, small coin loss."""
         loss = max(0, min(self.coins // 4, 50))
@@ -240,10 +291,35 @@ class WorldScene:
                 return mon
         return None
 
+    def _gate_block(self, warp):
+        """Badge-gate forward exits: zone leader must be beaten to pass."""
+        chain = _ZONE_CHAIN.get(self.zone_id)
+        if chain is None or warp["zone"] != chain[0]:
+            return None
+        next_zone, leader_id = chain
+        if self.trainer_state.defeated.get(leader_id):
+            return None
+        leader = self.trainers_data["trainers"][leader_id]
+        return f"The gate to {self.zones[next_zone]['name']} is sealed! Beat {leader['name']} first!"
+
+    @property
+    def badge_ids(self):
+        """Badge ids earned, mapped from defeated leader trainers."""
+        badges = []
+        for tid, t in self.trainers_data["trainers"].items():
+            if t.get("leader") and self.trainer_state.defeated.get(tid):
+                if t["badge"] not in badges:
+                    badges.append(t["badge"])
+        return badges
+
     def _on_step(self):
         """Called each time the player finishes a step onto a new tile."""
         warp = self.tile_map.warp_at(self.player.tile_x, self.player.tile_y)
         if warp is not None:
+            blocked = self._gate_block(warp)
+            if blocked is not None:
+                self._flash(blocked)
+                return
             self.switch_zone(warp["zone"], warp["tx"], warp["ty"])
             return
         zone = self.zones[self.zone_id]
@@ -278,6 +354,23 @@ class WorldScene:
                 return tid, t
         return None
 
+    def _leader_at(self, tx, ty):
+        """Leader trainer standing at (tx, ty), if any (defeated leaders step aside)."""
+        for tid, t in trainers_in_zone(self.zone_id):
+            if t.get("leader") and t["x"] == tx and t["y"] == ty:
+                if self.trainer_state.defeated.get(tid):
+                    continue  # beaten: they moved off the door
+                return tid, t
+        return None
+
+    def _leader_blocks(self):
+        """Tiles occupied by undefeated leaders (they block the path forward)."""
+        blocked = set()
+        for tid, t in trainers_in_zone(self.zone_id):
+            if t.get("leader") and not self.trainer_state.defeated.get(tid):
+                blocked.add((t["x"], t["y"]))
+        return blocked
+
     def _check_trainer_sight(self):
         """Start a trainer battle when the player steps adjacent to a trainer."""
         found = self._trainer_at(self.player.tile_x, self.player.tile_y)
@@ -289,8 +382,8 @@ class WorldScene:
         if found is None:
             return
         tid, trainer = found
-        if trainer.get("rival"):
-            return  # rivals (Emmett) are talk-to-battle, never ambushed
+        if trainer.get("rival") or trainer.get("leader"):
+            return  # rivals and leaders are talk-to-battle, never ambushed
         if not self.trainer_state.can_challenge(tid, trainer):
             return
         if self.trainer_state.defeated.get(tid) and not trainer.get("rival"):
@@ -312,7 +405,7 @@ class WorldScene:
             "up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0),
         }[self.player.facing]
         tx, ty = self.player.tile_x + dx, self.player.tile_y + dy
-        rival = self._rival_at(tx, ty)
+        rival = self._rival_at(tx, ty) or self._leader_at(tx, ty)
         if rival is not None:
             tid, trainer = rival
             if self.trainer_state.can_challenge(tid, trainer):
@@ -329,9 +422,11 @@ class WorldScene:
             else:
                 blocked = trainer.get("requires_defeat")
                 if blocked and not self.trainer_state.defeated.get(blocked):
-                    self._flash("Emmett says: catch me in Fernfall later!")
+                    self._flash(f"{self.rival_name} says: catch me in Fernfall later!")
+                elif trainer.get("leader"):
+                    self._flash(f"{trainer['name']} says: come back stronger!")
                 else:
-                    self._flash("Emmett is resting. Try again soon!")
+                    self._flash(f"{self.rival_name} is resting. Try again soon!")
             return
         if self.tile_map.is_healing_lodge(tx, ty):
             self._heal_party()
@@ -352,7 +447,7 @@ class WorldScene:
             self._update_pause_menu()
             return
         was_moving = self.player.moving
-        self.player.update(dt, self.tile_map, self.game.input.held)
+        self.player.update(dt, self.tile_map, self.game.input.held, self._leader_blocks())
         if self.zone_banner_timer > 0:
             self.zone_banner_timer -= dt
 
@@ -402,8 +497,17 @@ class WorldScene:
         for tid, trainer in trainers_in_zone(self.zone_id):
             x = trainer["x"] * TILE_SIZE - cam_x
             y = trainer["y"] * TILE_SIZE - cam_y
-            if not self.trainer_state.defeated.get(tid):
-                color = (200, 60, 60) if trainer.get("rival") else (230, 160, 60)
+            defeated = bool(self.trainer_state.defeated.get(tid))
+            if defeated and trainer.get("leader"):
+                # beaten leader steps aside, off the door, and greys out
+                x -= TILE_SIZE
+            if not defeated:
+                if trainer.get("leader"):
+                    color = (200, 50, 200)
+                elif trainer.get("rival"):
+                    color = (200, 60, 60)
+                else:
+                    color = (230, 160, 60)
             else:
                 color = (110, 110, 110)
             pygame.draw.rect(surface, color, (x + 4, y + 2, 8, 5))
@@ -441,6 +545,9 @@ class WorldScene:
         if self.save_menu:
             self._draw_save_menu(surface)
             return
+        if getattr(self, "storage_menu", False):
+            self._draw_storage(surface)
+            return
         if self.party_menu:
             self._draw_party(surface)
             return
@@ -454,6 +561,26 @@ class WorldScene:
                 x = rect.centerx - label.get_width() // 2 - 4
                 pygame.draw.polygon(
                     surface, WHITE, [(x - 6, y + 3), (x - 1, y + 6), (x - 6, y + 9)]
+                )
+
+    def _draw_storage(self, surface):
+        """Storage box list: stored monsters, confirm adds to party."""
+        rect = pygame.Rect(8, 8, SCREEN_W - 16, 11 * max(1, len(self.storage)) + 4)
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        if not self.storage:
+            label = self.font.render("Storage is empty! X to close.", False, WHITE, BLACK)
+            surface.blit(label, (rect.x + 10, rect.y + 4))
+            return
+        for i, mon in enumerate(self.storage):
+            hp = f"{mon.hp}/{mon.max_hp}"
+            label = self.font.render(f"{mon.name} L{mon.level} {hp}", False, WHITE, BLACK)
+            y = rect.y + 2 + i * 11
+            surface.blit(label, (rect.x + 10, y))
+            if i == self.storage_index:
+                pygame.draw.polygon(
+                    surface, WHITE,
+                    [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
                 )
 
     def _draw_save_menu(self, surface):
@@ -488,7 +615,31 @@ class WorldScene:
                     [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
                 )
 
-    _PAUSE_MENU = ("Monsters", "Trainer Card", "Save", "Close")
+    _PAUSE_MENU = ("Monsters", "Trainer Card", "Storage", "Save", "Close")
+
+    def _update_storage_menu(self):
+        """Storage box: swap stored monsters with party members (Fern Badge)."""
+        pressed = self.game.input.pressed
+        stored = self.storage
+        if not stored:
+            if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
+                self.storage_menu = False
+            return
+        if input_mod.UP in pressed:
+            self.storage_index = (self.storage_index - 1) % len(stored)
+        elif input_mod.DOWN in pressed:
+            self.storage_index = (self.storage_index + 1) % len(stored)
+        elif input_mod.CONFIRM in pressed:
+            chosen = stored[self.storage_index]
+            if len(self.party) < 6:
+                self.storage.pop(self.storage_index)
+                self.party.append(chosen)
+                self.storage_index = 0
+                self.game.audio.confirm()
+            else:
+                self._flash("Party is full! Move one to storage first.")
+        elif input_mod.CANCEL in pressed:
+            self.storage_menu = False
 
     def _update_pause_menu(self):
         """Handle input while the pause menu is open."""
@@ -529,6 +680,9 @@ class WorldScene:
             elif input_mod.CANCEL in pressed:
                 self.party_menu = False
             return
+        if getattr(self, "storage_menu", False):
+            self._update_storage_menu()
+            return
         if input_mod.UP in pressed:
             self.pause_index = (self.pause_index - 1) % len(self._PAUSE_MENU)
         elif input_mod.DOWN in pressed:
@@ -540,6 +694,12 @@ class WorldScene:
                 self.party_index = 0
             elif choice == "Trainer Card":
                 self.card_menu = True
+            elif choice == "Storage":
+                if "fern" in self.badge_ids:
+                    self.storage_menu = True
+                    self.storage_index = 0
+                else:
+                    self._flash("Storage unlocks with the Fern Badge!")
             elif choice == "Save":
                 self.save_menu = True
                 self.save_index = 0
@@ -556,19 +716,38 @@ class WorldScene:
             label = self.font.render(line, False, WHITE, BLACK)
             surface.blit(label, (rect.x + 3, rect.y + 2 + i * 10))
 
+    _BADGE_ORDER = ("pine", "stone", "fern", "gale", "bloom", "thorn", "ember_crown")
+    _BADGE_COLORS = {
+        "pine": (90, 185, 90), "stone": (155, 145, 125), "fern": (60, 140, 60),
+        "gale": (245, 222, 110), "bloom": (230, 120, 200), "thorn": (180, 60, 60),
+        "ember_crown": (245, 120, 60),
+    }
+
     def _draw_trainer_card(self, surface):
-        """Trainer card: play time, battles won, monsters caught, coins (spec 11)."""
+        """Trainer card: name, badges, stats (spec 11 + M9)."""
         minutes = int(self.play_time // 60)
         lines = [
-            "TRAINER CARD",
+            f"{self.player_name}'s CARD",
+            f"Rival: {self.rival_name}",
             f"Battles Won: {self.battles_won}",
             f"Monsters Caught: {self.monsters_caught}",
             f"Coins: {self.coins}",
             f"Play Time: {minutes}m",
         ]
-        rect = pygame.Rect(30, 20, SCREEN_W - 60, 12 * len(lines) + 8)
+        rect = pygame.Rect(30, 16, SCREEN_W - 60, 12 * len(lines) + 22)
         pygame.draw.rect(surface, BLACK, rect)
         pygame.draw.rect(surface, WHITE, rect, 1)
         for i, line in enumerate(lines):
             label = self.font.render(line, False, WHITE, BLACK)
             surface.blit(label, (rect.x + 6, rect.y + 4 + i * 12))
+        # badge strip: 7 slots, filled as earned
+        earned = set(self.badge_ids)
+        bx = rect.x + 6
+        by = rect.bottom - 14
+        for badge in self._BADGE_ORDER:
+            color = self._BADGE_COLORS[badge] if badge in earned else (60, 60, 60)
+            pygame.draw.circle(surface, color, (bx + 5, by + 5), 4)
+            pygame.draw.circle(
+                surface, WHITE if badge in earned else (110, 110, 110), (bx + 5, by + 5), 4, 1
+            )
+            bx += 24

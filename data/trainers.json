@@ -156,6 +156,188 @@
           "level": 25
         }
       ]
+    },
+    "fenwick": {
+      "name": "Warden Fenwick",
+      "zone": "whispering_pines",
+      "x": 9,
+      "y": 12,
+      "leader": true,
+      "badge": "pine",
+      "badge_name": "Pine Badge",
+      "intro": "None pass the pines without the Pine Badge!",
+      "defeat": "The forest whispers your name now, young hunter.",
+      "reward": 120,
+      "team": [
+        {
+          "species": "mossrat",
+          "level": 8
+        },
+        {
+          "species": "chirrel",
+          "level": 8
+        },
+        {
+          "species": "fernpup",
+          "level": 9
+        }
+      ]
+    },
+    "boulder": {
+      "name": "Chief Boulder",
+      "zone": "pineroot_crossing",
+      "x": 9,
+      "y": 12,
+      "leader": true,
+      "badge": "stone",
+      "badge_name": "Stone Badge",
+      "intro": "My stones have broken braver hunters than you!",
+      "defeat": "Cracked... but not crushed. Take the Stone Badge.",
+      "reward": 200,
+      "team": [
+        {
+          "species": "pebblet",
+          "level": 12
+        },
+        {
+          "species": "cragmite",
+          "level": 12
+        },
+        {
+          "species": "barkshell",
+          "level": 13
+        }
+      ]
+    },
+    "ivy": {
+      "name": "Forager-Mother Ivy",
+      "zone": "mossy_hollow",
+      "x": 10,
+      "y": 11,
+      "leader": true,
+      "badge": "fern",
+      "badge_name": "Fern Badge",
+      "intro": "The hollow feeds those who earn it. Show me your worth!",
+      "defeat": "The ferns part for you now. The Fern Badge is yours.",
+      "reward": 320,
+      "team": [
+        {
+          "species": "dewvole",
+          "level": 16
+        },
+        {
+          "species": "petalfin",
+          "level": 16
+        },
+        {
+          "species": "marshpaw",
+          "level": 17
+        }
+      ]
+    },
+    "rex": {
+      "name": "Climber Rex",
+      "zone": "thornwood_ridge",
+      "x": 10,
+      "y": 11,
+      "leader": true,
+      "badge": "gale",
+      "badge_name": "Gale Badge",
+      "intro": "The ridge winds bite harder than my team. Ready?",
+      "defeat": "You climb like the wind itself! The Gale Badge is yours.",
+      "reward": 480,
+      "team": [
+        {
+          "species": "sparkit",
+          "level": 24
+        },
+        {
+          "species": "sleetfox",
+          "level": 24
+        },
+        {
+          "species": "hailhawk",
+          "level": 25
+        }
+      ]
+    },
+    "hazel": {
+      "name": "Mayor Hazel",
+      "zone": "fernfall",
+      "x": 9,
+      "y": 12,
+      "leader": true,
+      "badge": "bloom",
+      "badge_name": "Bloom Badge",
+      "intro": "Fernfall's champion answers to no novice!",
+      "defeat": "The whole town saw that. Bloom Badge, earned and given.",
+      "reward": 640,
+      "team": [
+        {
+          "species": "riverfin",
+          "level": 20
+        },
+        {
+          "species": "bramblecat",
+          "level": 20
+        },
+        {
+          "species": "fernfox",
+          "level": 21
+        }
+      ]
+    },
+    "bram": {
+      "name": "Gatekeeper Bram",
+      "zone": "mossy_hollow_gate",
+      "x": 9,
+      "y": 12,
+      "leader": true,
+      "badge": "thorn",
+      "badge_name": "Thorn Badge",
+      "intro": "None see the glade without passing me and mine.",
+      "defeat": "Thornworn but standing. The Thorn Badge is yours.",
+      "reward": 800,
+      "team": [
+        {
+          "species": "kindlekit",
+          "level": 28
+        },
+        {
+          "species": "cinderpy",
+          "level": 29
+        },
+        {
+          "species": "granitewyrm",
+          "level": 30
+        }
+      ]
+    },
+    "pyra": {
+      "name": "Champion Pyra",
+      "zone": "emberfern_glade",
+      "x": 9,
+      "y": 11,
+      "leader": true,
+      "badge": "ember_crown",
+      "badge_name": "Ember Crown",
+      "intro": "The glade burns for the worthy. Do you burn, hunter?",
+      "defeat": "Magnificent! Wear the Ember Crown with pride!",
+      "reward": 1000,
+      "team": [
+        {
+          "species": "flarehound",
+          "level": 33
+        },
+        {
+          "species": "smokeyote",
+          "level": 34
+        },
+        {
+          "species": "infernox",
+          "level": 35
+        }
+      ]
     }
   },
   "townsfolk": {
