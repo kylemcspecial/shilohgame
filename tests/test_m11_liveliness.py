@@ -295,3 +295,46 @@ def test_night_pool_excludes_legendaries(game):
     assert all(load_species()[sid]["tier"] < 4 for sid in night_species)
     assert "legendary_verdant" not in night_species
     assert "legendary_tidal" not in night_species
+
+
+def test_shiny_tint_preserves_transparency(game):
+    """Review fix: the gold tint must not fill the sprite's transparent background."""
+    from src.battle.scene import BattleScene
+    from src.battle import mon_sprites
+
+    enemy = mon("mossrat", 5)
+    enemy.make_shiny()
+    battle = BattleScene(game, mon("fernpup", 5), enemy)
+    battle.intro_timer = 0
+    battle.draw(game.buffer)  # must not crash and must not tint outside the sprite
+    # render the same sprite pair directly and inspect alpha/rgb math
+    plain = mon_sprites.build_monster_sprite("mossrat", ["leaf"])
+    sprite = plain.copy()
+    overlay = pygame.Surface(sprite.get_size(), pygame.SRCALPHA)
+    overlay.fill((60, 45, 0, 255))
+    sprite.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
+    # alpha channel untouched: transparent corners stay fully transparent
+    assert plain.get_at((0, 0))[3] == 0
+    assert sprite.get_at((0, 0))[3] == 0, "alpha channel must be untouched"
+    # real-world check: blitted onto a background, no gold rectangle shows
+    BG = (40, 60, 90)
+    canvas = pygame.Surface((32, 32))
+    canvas.fill(BG)
+    canvas.blit(sprite, (0, 0))
+    assert canvas.get_at((0, 0))[:3] == BG, "corner must show background, not gold"
+    assert canvas.get_at((31, 0))[:3] == BG
+    assert canvas.get_at((0, 31))[:3] == BG
+    # opaque body pixels get the gold add and keep their alpha
+    body = None
+    for y in range(32):
+        for x in range(32):
+            if plain.get_at((x, y))[3] == 255:
+                body = (x, y)
+                break
+        if body:
+            break
+    assert body, "sprite must have opaque pixels"
+    before = plain.get_at(body)
+    after = sprite.get_at(body)
+    assert after[3] == 255
+    assert after[0] > before[0] and after[1] > before[1], "body gets gold-tinted"

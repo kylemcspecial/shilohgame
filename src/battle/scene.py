@@ -448,9 +448,11 @@ class BattleScene:
         sprite = mon_sprites.build_monster_sprite(mon.species_id, mon.types)
         if getattr(mon, "shiny", False):
             sprite = sprite.copy()
+            # gold tint on opaque pixels only: plain-RGB add leaves the alpha
+            # channel untouched, so the silhouette stays transparent
             overlay = pygame.Surface(sprite.get_size(), pygame.SRCALPHA)
-            overlay.fill((255, 215, 80, 70))
-            sprite.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+            overlay.fill((60, 45, 0, 255))
+            sprite.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGB_ADD)
             now = pygame.time.get_ticks() / 150
             spark = int(now) % 3
             for i in range(4):
