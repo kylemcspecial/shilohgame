@@ -37,6 +37,8 @@ def serialize(world):
         "trainer_last_battled": {
             k: v for k, v in getattr(world.trainer_state, "last_battled", {}).items()
         },
+        "puzzle_state": getattr(world, "puzzles", None).serialize()
+        if getattr(world, "puzzles", None) else {},
     }
 
 
@@ -161,3 +163,7 @@ def apply_save(world, data):
     if hasattr(world, "trainer_state"):
         world.trainer_state.defeated = dict(data.get("trainer_defeated", {}))
         world.trainer_state.last_battled = dict(data.get("trainer_last_battled", {}))
+    puzzles = getattr(world, "puzzles", None)
+    if puzzles is not None:
+        puzzles.state = data.get("puzzle_state", {}) or {}
+        world._init_puzzle_state()

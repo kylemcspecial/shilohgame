@@ -13,6 +13,7 @@ from ..world.encounters import EncounterTracker
 from ..monsters.monster import Monster, load_species, load_moves, roll_wild
 from ..items.inventory import Inventory
 from ..world.trainers import TrainerState, trainers_in_zone, load_trainers
+from ..world import puzzles as puzzle_mod
 
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data")
 
@@ -87,6 +88,14 @@ class WorldScene:
         self.message = None
         self.message_timer = 0.0
         self.save_slot = None
+        self.puzzles = puzzle_mod.ZonePuzzles()
+        self.boulders = None  # (zone_id -> list of positions) runtime state
+        self.stones_entered = None
+        self.lanterns_on = None
+        self.riddle_menu = None
+        self.riddle_index = 0
+        self.answer_index = 0
+        self._init_puzzle_state()
 
     def switch_zone(self, zone_id, tx, ty):
         self.zone_id = zone_id
@@ -95,6 +104,32 @@ class WorldScene:
         self.player.px, self.player.py = tx * TILE_SIZE, ty * TILE_SIZE
         self.player.moving = False
         self.zone_banner_timer = 2.0
+        self.riddle_menu = None
+        self._init_puzzle_state()
+
+    def _puzzle_def(self):
+        """Puzzle definition for the current zone, or None."""
+        return self.zones[self.zone_id].get("puzzle")
+
+    def _init_puzzle_state(self):
+        """Load runtime puzzle state (boulder positions etc.) for this zone."""
+        p = self._puzzle_def()
+        self.boulders = None
+        self.stones_entered = []
+        self.lanterns_on = None
+        if p is None:
+            return
+        pid = p["id"]
+        if p["type"] == "boulder":
+            self.boulders = [tuple(b) for b in p["boulders"]]
+        elif p["type"] == "lanterns":
+            self.lanterns_on = list(self.puzzles.get(pid, "state", p["start"]))
+        if self.puzzles.solved(pid):
+            # solved: boulders rest on switches, stones stay crossed, lanterns lit
+            if p["type"] == "boulder":
+                self.boulders = [tuple(s) for s in p["switches"]]
+            elif p["type"] == "lanterns":
+                self.lanterns_on = [True] * len(p["lanterns"])
 
     @property
     def zone_name(self):
@@ -292,15 +327,18 @@ class WorldScene:
         return None
 
     def _gate_block(self, warp):
-        """Badge-gate forward exits: zone leader must be beaten to pass."""
+        """Badge-gate forward exits: leader beaten AND puzzle solved to pass."""
         chain = _ZONE_CHAIN.get(self.zone_id)
         if chain is None or warp["zone"] != chain[0]:
             return None
         next_zone, leader_id = chain
-        if self.trainer_state.defeated.get(leader_id):
-            return None
-        leader = self.trainers_data["trainers"][leader_id]
-        return f"The gate to {self.zones[next_zone]['name']} is sealed! Beat {leader['name']} first!"
+        if not self.trainer_state.defeated.get(leader_id):
+            leader = self.trainers_data["trainers"][leader_id]
+            return f"The gate to {self.zones[next_zone]['name']} is sealed! Beat {leader['name']} first!"
+        p = self._puzzle_def()
+        if p and not self.puzzles.solved(p["id"]):
+            return f"The gate is sealed! {p['hint']}"
+        return None
 
     @property
     def badge_ids(self):
@@ -312,8 +350,136 @@ class WorldScene:
                     badges.append(t["badge"])
         return badges
 
+    def _try_puzzle_interact(self, tx, ty):
+        """Interact with a puzzle tile the player faces. Returns True if handled."""
+        p = self._puzzle_def()
+        if p is None or self.puzzles.solved(p["id"]):
+            return False
+        char = self.tile_map.tile_at(tx, ty)
+        if p["type"] == "lanterns" and char == "Y":
+            idx = next(
+                i for i, (lx, ly) in enumerate(p["lanterns"]) if (lx, ly) == (tx, ty)
+            )
+            self.lanterns_on = puzzle_mod.lantern_toggle(self.lanterns_on, idx, p["layout"])
+            self.puzzles.set(p["id"], "state", list(self.lanterns_on))
+            self.game.audio.confirm()
+            if puzzle_mod.lanterns_solved(self.lanterns_on):
+                self._puzzle_solved(p)
+            else:
+                self._flash(p["hint"])
+            return True
+        if p["type"] == "riddles" and char == "?":
+            riddle = next(
+                (r for r in p["riddles"] if (r["x"], r["y"]) == (tx, ty)), None
+            )
+            if riddle is not None:
+                self.riddle_menu = riddle
+                self.answer_index = 0
+                self._flash(riddle["question"])
+            return True
+        if p["type"] == "stones" and char == "?":
+            self._flash(p["hint"])
+            return True
+        return False
+
+    def _update_riddle_menu(self):
+        """Riddle answer picker: three choices, correct answers stick."""
+        pressed = self.game.input.pressed
+        riddle = self.riddle_menu
+        answers = riddle["answers"]
+        if input_mod.UP in pressed:
+            self.answer_index = (self.answer_index - 1) % len(answers)
+        elif input_mod.DOWN in pressed:
+            self.answer_index = (self.answer_index + 1) % len(answers)
+        elif input_mod.CONFIRM in pressed:
+            p = self._puzzle_def()
+            ok = puzzle_mod.riddle_answered(
+                self.puzzles.state.setdefault(p["id"], {}),
+                riddle["id"], self.answer_index, riddle["correct"],
+            )
+            if ok:
+                self.game.audio.confirm()
+                ids = [r["id"] for r in p["riddles"]]
+                if puzzle_mod.riddles_solved(self.puzzles.state[p["id"]], ids):
+                    self._puzzle_solved(p)
+                else:
+                    self._flash("The stone glows. Onward!")
+                self.riddle_menu = None
+            else:
+                self.game.audio.catch_fail()
+                self._flash("The stone stays silent...")
+                self.riddle_menu = None
+        elif input_mod.CANCEL in pressed:
+            self.riddle_menu = None
+
+    def _puzzle_solved(self, p):
+        """Mark solved, play the jingle, and tell the player."""
+        self.puzzles.mark_solved(p["id"])
+        self.game.audio.catch_success()
+        self._flash("Click! The gate is unlocked!")
+
+    def _try_boulder_push(self, held):
+        """Walking into a boulder pushes it one tile, if the space beyond is free."""
+        p = self._puzzle_def()
+        if p is None or p["type"] != "boulder" or self.puzzles.solved(p["id"]):
+            return None
+        if self.boulders is None or not held:
+            return None
+        dx, dy = {
+            "up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0),
+        }.get(next(iter(held)), (0, 0)) if len(held) == 1 else (0, 0)
+        if not dx and not dy:
+            return None
+        bx, by = self.player.tile_x + dx, self.player.tile_y + dy
+        if (bx, by) not in self.boulders:
+            return None
+        index = self.boulders.index((bx, by))
+        new_pos = puzzle_mod.boulder_push(
+            self.boulders, set(self.boulders), dx, dy, (bx, by)
+        )
+        if new_pos is None or self.tile_map.is_solid(*new_pos):
+            self.game.audio.catch_fail()
+            self._flash("The boulder won't budge!")
+            return "blocked"
+        self.boulders[index] = new_pos
+        self.game.audio.confirm()
+        return "pushed"
+
+    def _puzzle_step(self):
+        """Called on each completed step: pushes, stone sequence, resets."""
+        p = self._puzzle_def()
+        if p is None:
+            return
+        x, y = self.player.tile_x, self.player.tile_y
+        if self.puzzles.solved(p["id"]):
+            return
+        if p["type"] == "boulder" and self.boulders is not None:
+            switches = [tuple(s) for s in p["switches"]]
+            if puzzle_mod.boulder_solved(self.boulders, switches):
+                self._puzzle_solved(p)
+        if p["type"] == "stones":
+            char = self.tile_map.tile_at(x, y)
+            if char == "~":
+                ok, entered = puzzle_mod.stones_step(
+                    [tuple(s) for s in p["sequence"]],
+                    [tuple(e) for e in self.stones_entered],
+                    (x, y),
+                )
+                self.stones_entered = entered
+                if not ok:
+                    self.game.audio.catch_fail()
+                    self._flash("Splash! Wrong stone. The dance resets!")
+                    # send the player back to the bank
+                    bank = p["sequence"][0]
+                    self.player.tile_x, self.player.tile_y = bank[0], bank[1] - 1
+                    self.player.px = self.player.tile_x * TILE_SIZE
+                    self.player.py = self.player.tile_y * TILE_SIZE
+                elif puzzle_mod.stones_solved(p["sequence"], entered):
+                    self._puzzle_solved(p)
+
     def _on_step(self):
         """Called each time the player finishes a step onto a new tile."""
+        self._puzzle_step()
         warp = self.tile_map.warp_at(self.player.tile_x, self.player.tile_y)
         if warp is not None:
             blocked = self._gate_block(warp)
@@ -405,6 +571,8 @@ class WorldScene:
             "up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0),
         }[self.player.facing]
         tx, ty = self.player.tile_x + dx, self.player.tile_y + dy
+        if self._try_puzzle_interact(tx, ty):
+            return
         rival = self._rival_at(tx, ty) or self._leader_at(tx, ty)
         if rival is not None:
             tid, trainer = rival
@@ -436,6 +604,9 @@ class WorldScene:
             self._save_or_pick_slot("You rested at home. Game saved!")
 
     def update(self, dt):
+        if self.riddle_menu is not None:
+            self._update_riddle_menu()
+            return
         if self.shop_menu:
             self._update_shop_menu()
             return
@@ -447,6 +618,10 @@ class WorldScene:
             self._update_pause_menu()
             return
         was_moving = self.player.moving
+        if not self.player.moving:
+            push = self._try_boulder_push(self.game.input.held)
+            if push:
+                return  # the boulder moved; the player stays put this frame
         self.player.update(dt, self.tile_map, self.game.input.held, self._leader_blocks())
         if self.zone_banner_timer > 0:
             self.zone_banner_timer -= dt
@@ -481,7 +656,10 @@ class WorldScene:
 
         self.player.draw(surface, cam_x, cam_y)
         self._draw_trainers(surface, cam_x, cam_y)
+        self._draw_puzzles(surface, cam_x, cam_y)
         self._draw_hud(surface)
+        if self.riddle_menu is not None:
+            self._draw_riddle_menu(surface)
 
         if self.zone_banner_timer > 0:
             self._draw_banner(surface, self.zone_name)
@@ -491,6 +669,52 @@ class WorldScene:
             self._draw_shop(surface)
         if self.paused:
             self._draw_pause(surface)
+
+    def _draw_puzzles(self, surface, cam_x, cam_y):
+        """Overlay puzzle state: boulders, lit lanterns, stone progress."""
+        p = self._puzzle_def()
+        if p is None:
+            return
+        if p["type"] == "boulder" and self.boulders:
+            for bx, by in self.boulders:
+                x, y = bx * TILE_SIZE - cam_x, by * TILE_SIZE - cam_y
+                pygame.draw.circle(surface, (30, 28, 40), (x + 8, y + 9), 6)
+                pygame.draw.circle(surface, (150, 145, 130), (x + 8, y + 8), 6)
+                pygame.draw.circle(surface, (200, 195, 180), (x + 6, y + 6), 2)
+        elif p["type"] == "lanterns" and self.lanterns_on:
+            for i, (lx, ly) in enumerate(p["lanterns"]):
+                lit = self.lanterns_on[i]
+                x, y = lx * TILE_SIZE - cam_x, ly * TILE_SIZE - cam_y
+                color = (255, 220, 120) if lit else (70, 70, 80)
+                pygame.draw.rect(surface, color, (x + 5, y + 2, 6, 5))
+                if lit:
+                    pygame.draw.circle(surface, (255, 240, 180), (x + 8, y + 4), 3)
+        elif p["type"] == "stones" and not self.puzzles.solved(p["id"]):
+            done = len(self.stones_entered)
+            total = len(p["sequence"])
+            label = self.font.render(f"Dance: {done}/{total}", False, WHITE, BLACK)
+            surface.blit(label, (SCREEN_W - label.get_width() - 2, 14))
+
+    def _draw_riddle_menu(self, surface):
+        """Riddle box: question plus three answers with a cursor."""
+        riddle = self.riddle_menu
+        lines = [riddle["question"]] + riddle["answers"]
+        rect = pygame.Rect(8, SCREEN_H - 14 - 10 * len(lines) - 6, SCREEN_W - 16,
+                           10 * len(lines) + 8)
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        q = self.font.render(lines[0], False, (255, 230, 140), BLACK)
+        surface.blit(q, (rect.x + 4, rect.y + 3))
+        for i, answer in enumerate(riddle["answers"]):
+            y = rect.y + 13 + i * 10
+            color = WHITE
+            label = self.font.render(answer, False, color, BLACK)
+            surface.blit(label, (rect.x + 10, y))
+            if i == self.answer_index:
+                pygame.draw.polygon(
+                    surface, WHITE,
+                    [(rect.x + 4, y + 2), (rect.x + 8, y + 4), (rect.x + 4, y + 6)],
+                )
 
     def _draw_trainers(self, surface, cam_x, cam_y):
         """Draw a marker at each trainer's tile so challenges are visible."""

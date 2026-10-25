@@ -153,6 +153,58 @@ def _paint_door(surface):
     pygame.draw.rect(surface, (255, 220, 120), (4, 14, 8, 1))
 
 
+def _paint_boulder(surface):
+    """Pushable boulder: round rock with shading, sits on grass."""
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    pygame.draw.circle(surface, (30, 28, 40), (8, 9), 6)
+    pygame.draw.circle(surface, (150, 145, 130), (8, 8), 6)
+    pygame.draw.circle(surface, (195, 190, 175), (6, 6), 2)
+    pygame.draw.line(surface, (110, 105, 95), (5, 10), (10, 11), 1)
+
+
+def _paint_switch(surface):
+    """Switch plate: recessed square that lights up (state drawn in scene)."""
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    pygame.draw.rect(surface, (60, 56, 72), (3, 3, 10, 10))
+    pygame.draw.rect(surface, (120, 116, 140), (4, 4, 8, 8))
+
+
+def _paint_stone_path(surface):
+    """Stepping stones across a stream: two round stones."""
+    w = PALETTES.get("water") or {"mid": (50, 90, 170), "hi": (90, 140, 220)}
+    surface.fill(w["mid"])
+    pygame.draw.circle(surface, (140, 132, 120), (5, 11), 4)
+    pygame.draw.circle(surface, (170, 162, 150), (5, 10), 3)
+    pygame.draw.circle(surface, (140, 132, 120), (11, 5), 4)
+    pygame.draw.circle(surface, (170, 162, 150), (11, 4), 3)
+
+
+def _paint_lantern(surface):
+    """Lantern post: lit/unlit state drawn as overlay in the scene."""
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    pygame.draw.line(surface, (60, 50, 40), (8, 15), (8, 6), 2)
+    pygame.draw.rect(surface, (30, 28, 40), (4, 1, 8, 7))
+    pygame.draw.rect(surface, (255, 220, 120), (5, 2, 6, 5))
+
+
+def _paint_riddle(surface):
+    """Riddle stone: carved monolith with a question glyph."""
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    pygame.draw.rect(surface, (30, 28, 40), (4, 1, 8, 14))
+    pygame.draw.rect(surface, (150, 145, 130), (5, 2, 6, 12))
+    pygame.draw.line(surface, (90, 86, 76), (6, 4), (10, 4), 1)
+    pygame.draw.line(surface, (90, 86, 76), (8, 5), (8, 8), 1)
+    pygame.draw.line(surface, (90, 86, 76), (6, 10), (10, 10), 1)
+
+
 def _paint_npc_tile(surface):
     g = PALETTES["grass"]
     surface.fill(g["mid"])
@@ -179,6 +231,11 @@ _PAINTERS = {
     "H": _paint_lodge,
     "S": _paint_shop,
     "D": _paint_door,
+    "B": _paint_boulder,
+    "o": _paint_switch,
+    "~": _paint_stone_path,
+    "Y": _paint_lantern,
+    "?": _paint_riddle,
     "N": _paint_npc_tile,
 }
 
@@ -207,7 +264,7 @@ class TileMap:
         return "T"
 
     def is_solid(self, tx, ty):
-        return self.tile_at(tx, ty) in ("T", "#", "H", "S")
+        return self.tile_at(tx, ty) in ("T", "#", "H", "S", "B")
 
     def is_tall_grass(self, tx, ty):
         return self.tile_at(tx, ty) == "G"
