@@ -89,6 +89,11 @@ class WorldScene:
         self.coins = 60
         self.battles_won = 0
         self.monsters_caught = 0
+        self.dex_seen = []
+        self.dex_caught = []
+        self.dex_menu = False
+        self.dex_index = 0
+        self.map_menu = False
         self.badges = []
         self.play_time = 0.0
         self.message = None
@@ -330,6 +335,17 @@ class WorldScene:
         self.message = text
         self.message_timer = 2.5
 
+    def dex_register(self, mon, caught=False):
+        """Record a species in the dex (seen; optionally caught)."""
+        changed = False
+        if mon.species_id not in self.dex_seen:
+            self.dex_seen.append(mon.species_id)
+            changed = True
+        if caught and mon.species_id not in self.dex_caught:
+            self.dex_caught.append(mon.species_id)
+            changed = True
+        return changed
+
     def on_badge_won(self, badge_id):
         """Award a badge: record it, triple-coin payout, unlock message."""
         if badge_id in getattr(self, "_badges_awarded", ()):
@@ -406,6 +422,29 @@ class WorldScene:
             self.play_time + self._BERRY_REGROW_SECONDS
         )
         self._flash(f"You picked {n} berries!" if n > 1 else "You picked 1 berry!")
+        return True
+
+    def _try_shrine(self, tx, ty):
+        """Legendary shrine: Ember Crown starts a tier-4 encounter."""
+        shrine = self.zones[self.zone_id].get("legendary_shrine")
+        if shrine is None or (tx, ty) != (shrine["x"], shrine["y"]):
+            return False
+        if shrine["requires_badge"] not in self.badge_ids:
+            self._flash("The shrine sleeps... (Come back with the Ember Crown!)")
+            return True
+        if self._first_living() is None:
+            self.heal_and_revive()
+            return True
+        from ..battle.scene import BattleScene
+
+        pick = random_module.randrange(len(shrine["species"]))
+        species_id = shrine["species"][pick]
+        level = shrine["levels"][pick]
+        enemy = Monster(species_id, level, species_all, load_moves())
+        self._flash(shrine["hint"])
+        self.game.start_battle(
+            BattleScene(self.game, self._first_living(), enemy, inventory=self.inventory)
+        )
         return True
 
     def _try_puzzle_interact(self, tx, ty):
@@ -656,6 +695,8 @@ class WorldScene:
             "up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0),
         }[self.player.facing]
         tx, ty = self.player.tile_x + dx, self.player.tile_y + dy
+        if self._try_shrine(tx, ty):
+            return
         if self._try_puzzle_interact(tx, ty):
             return
         rival = self._rival_at(tx, ty) or self._leader_at(tx, ty)
@@ -878,6 +919,12 @@ class WorldScene:
         rect = pygame.Rect(60, 40, 120, 80)
         pygame.draw.rect(surface, BLACK, rect)
         pygame.draw.rect(surface, WHITE, rect, 1)
+        if self.dex_menu:
+            self._draw_dex(surface)
+            return
+        if self.map_menu:
+            self._draw_map(surface)
+            return
         if self.card_menu:
             self._draw_trainer_card(surface)
             return
@@ -954,7 +1001,7 @@ class WorldScene:
                     [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
                 )
 
-    _PAUSE_MENU = ("Monsters", "Trainer Card", "Storage", "Save", "Close")
+    _PAUSE_MENU = ("Monsters", "Dex", "Trainer Card", "Storage", "Map", "Save", "Close")
 
     def _update_storage_menu(self):
         """Storage box: swap stored monsters with party members (Fern Badge)."""
@@ -983,6 +1030,19 @@ class WorldScene:
     def _update_pause_menu(self):
         """Handle input while the pause menu is open."""
         pressed = self.game.input.pressed
+        if self.dex_menu:
+            total = len(load_species())
+            if input_mod.UP in pressed:
+                self.dex_index = (self.dex_index - 1) % total
+            elif input_mod.DOWN in pressed:
+                self.dex_index = (self.dex_index + 1) % total
+            elif input_mod.CANCEL in pressed or input_mod.CONFIRM in pressed:
+                self.dex_menu = False
+            return
+        if self.map_menu:
+            if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
+                self.map_menu = False
+            return
         if self.card_menu:
             if input_mod.CONFIRM in pressed or input_mod.CANCEL in pressed:
                 self.card_menu = False
@@ -1031,8 +1091,13 @@ class WorldScene:
             if choice == "Monsters":
                 self.party_menu = True
                 self.party_index = 0
+            elif choice == "Dex":
+                self.dex_menu = True
+                self.dex_index = 0
             elif choice == "Trainer Card":
                 self.card_menu = True
+            elif choice == "Map":
+                self.map_menu = True
             elif choice == "Storage":
                 if "fern" in self.badge_ids:
                     self.storage_menu = True
@@ -1054,6 +1119,70 @@ class WorldScene:
         for i, line in enumerate(lines):
             label = self.font.render(line, False, WHITE, BLACK)
             surface.blit(label, (rect.x + 3, rect.y + 2 + i * 10))
+
+    def _draw_dex(self, surface):
+        """Monster dex: species list with seen/caught marks, scrollable."""
+        species = load_species()
+        ids = list(species)
+        visible = 10
+        window = pygame.Rect(8, 8, SCREEN_W - 16, 11 * visible + 14)
+        pygame.draw.rect(surface, BLACK, window)
+        pygame.draw.rect(surface, WHITE, window, 1)
+        title = self.font.render(
+            f"DEX  {len(self.dex_caught)} caught / {len(self.dex_seen)} seen", False,
+            (255, 230, 140), BLACK,
+        )
+        surface.blit(title, (window.x + 4, window.y + 2))
+        start = max(0, min(self.dex_index - visible // 2, len(ids) - visible))
+        for row in range(visible):
+            idx = start + row
+            if idx >= len(ids):
+                break
+            sid = ids[idx]
+            sp = species[sid]
+            if sid in self.dex_seen:
+                mark = "\u2605" if sid in self.dex_caught else " \u00b7"
+                color = WHITE if sid in self.dex_caught else (170, 170, 170)
+                label = self.font.render(f"{mark} {sp['name']}", False, color, BLACK)
+            else:
+                label = self.font.render("-  ?????", False, (90, 90, 90), BLACK)
+            y = window.y + 13 + row * 11
+            surface.blit(label, (window.x + 6, y))
+            if idx == self.dex_index:
+                pygame.draw.polygon(
+                    surface, WHITE,
+                    [(window.x + 1, y + 3), (window.x + 5, y + 5), (window.x + 1, y + 7)],
+                )
+
+    def _draw_map(self, surface):
+        """Zone progress map: the chain with current zone and badges."""
+        rect = pygame.Rect(20, 16, SCREEN_W - 40, 12 * 8 + 10)
+        pygame.draw.rect(surface, BLACK, rect)
+        pygame.draw.rect(surface, WHITE, rect, 1)
+        title = self.font.render("YOUR JOURNEY", False, (255, 230, 140), BLACK)
+        surface.blit(title, (rect.centerx - title.get_width() // 2, rect.y + 3))
+        chain = [("hunters_rest", None)] + list(_ZONE_CHAIN.items())
+        for i, item in enumerate(chain):
+            if item[1] is None:
+                zid, name = item[0], self.zones[item[0]]["name"]
+                badge = None
+            else:
+                zid = item[0]
+                name = self.zones[item[0]]["name"]
+                badge = item[1][1]
+            y = rect.y + 16 + i * 11
+            current = zid == self.zone_id
+            color = (255, 230, 140) if current else WHITE
+            leader = self.trainers_data["trainers"][badge]["name"] if badge else None
+            text = f"> {name}" if current else name
+            label = self.font.render(text, False, color, BLACK)
+            surface.blit(label, (rect.x + 8, y))
+            if leader:
+                leader_id = badge
+                done = self.trainer_state.defeated.get(leader_id)
+                status = "OK!" if done else self.trainers_data["trainers"][leader_id]["name"]
+                slabel = self.font.render(status, False, (120, 220, 120) if done else (230, 120, 120), BLACK)
+                surface.blit(slabel, (rect.right - slabel.get_width() - 8, y))
 
     _BADGE_ORDER = ("pine", "stone", "fern", "gale", "bloom", "thorn", "ember_crown")
     _BADGE_COLORS = {

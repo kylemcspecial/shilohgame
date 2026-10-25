@@ -153,6 +153,19 @@ def _paint_door(surface):
     pygame.draw.rect(surface, (255, 220, 120), (4, 14, 8, 1))
 
 
+def _paint_shrine(surface):
+    """Legendary shrine: carved stone dais with a glowing sigil."""
+    g = PALETTES["grass"]
+    surface.fill(g["mid"])
+    dither(surface, (0, 0, TILE, TILE), g["light"], g["mid"])
+    pygame.draw.rect(surface, (30, 28, 40), (2, 6, 12, 8))
+    pygame.draw.rect(surface, (140, 130, 150), (3, 7, 10, 6))
+    pygame.draw.circle(surface, (90, 220, 140), (8, 9), 2)
+    pygame.draw.circle(surface, (200, 255, 220), (8, 8), 1)
+    for px in (5, 11):
+        pygame.draw.line(surface, (110, 100, 120), (px, 6), (px, 13), 1)
+
+
 def _paint_berry_plant(surface):
     """Berry plant: bush with red berries (picked state drawn in scene)."""
     g = PALETTES["tallgrass"]
@@ -245,6 +258,7 @@ _PAINTERS = {
     "D": _paint_door,
     "B": _paint_boulder,
     "b": _paint_berry_plant,
+    "L": _paint_shrine,
     "o": _paint_switch,
     "~": _paint_stone_path,
     "Y": _paint_lantern,
