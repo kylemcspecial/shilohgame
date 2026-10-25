@@ -160,8 +160,8 @@
     "fenwick": {
       "name": "Warden Fenwick",
       "zone": "whispering_pines",
-      "x": 8,
-      "y": 11,
+      "x": 9,
+      "y": 12,
       "leader": true,
       "badge": "pine",
       "badge_name": "Pine Badge",
@@ -186,7 +186,7 @@
     "boulder": {
       "name": "Chief Boulder",
       "zone": "pineroot_crossing",
-      "x": 8,
+      "x": 9,
       "y": 12,
       "leader": true,
       "badge": "stone",
@@ -212,7 +212,7 @@
     "ivy": {
       "name": "Forager-Mother Ivy",
       "zone": "mossy_hollow",
-      "x": 9,
+      "x": 10,
       "y": 11,
       "leader": true,
       "badge": "fern",
@@ -238,7 +238,7 @@
     "rex": {
       "name": "Climber Rex",
       "zone": "thornwood_ridge",
-      "x": 9,
+      "x": 10,
       "y": 11,
       "leader": true,
       "badge": "gale",
@@ -264,7 +264,7 @@
     "hazel": {
       "name": "Mayor Hazel",
       "zone": "fernfall",
-      "x": 8,
+      "x": 9,
       "y": 12,
       "leader": true,
       "badge": "bloom",
@@ -290,7 +290,7 @@
     "bram": {
       "name": "Gatekeeper Bram",
       "zone": "mossy_hollow_gate",
-      "x": 8,
+      "x": 9,
       "y": 12,
       "leader": true,
       "badge": "thorn",

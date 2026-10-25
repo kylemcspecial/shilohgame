@@ -355,11 +355,21 @@ class WorldScene:
         return None
 
     def _leader_at(self, tx, ty):
-        """Leader trainer standing at (tx, ty), if any."""
+        """Leader trainer standing at (tx, ty), if any (defeated leaders step aside)."""
         for tid, t in trainers_in_zone(self.zone_id):
             if t.get("leader") and t["x"] == tx and t["y"] == ty:
+                if self.trainer_state.defeated.get(tid):
+                    continue  # beaten: they moved off the door
                 return tid, t
         return None
+
+    def _leader_blocks(self):
+        """Tiles occupied by undefeated leaders (they block the path forward)."""
+        blocked = set()
+        for tid, t in trainers_in_zone(self.zone_id):
+            if t.get("leader") and not self.trainer_state.defeated.get(tid):
+                blocked.add((t["x"], t["y"]))
+        return blocked
 
     def _check_trainer_sight(self):
         """Start a trainer battle when the player steps adjacent to a trainer."""
@@ -437,7 +447,7 @@ class WorldScene:
             self._update_pause_menu()
             return
         was_moving = self.player.moving
-        self.player.update(dt, self.tile_map, self.game.input.held)
+        self.player.update(dt, self.tile_map, self.game.input.held, self._leader_blocks())
         if self.zone_banner_timer > 0:
             self.zone_banner_timer -= dt
 
@@ -487,7 +497,11 @@ class WorldScene:
         for tid, trainer in trainers_in_zone(self.zone_id):
             x = trainer["x"] * TILE_SIZE - cam_x
             y = trainer["y"] * TILE_SIZE - cam_y
-            if not self.trainer_state.defeated.get(tid):
+            defeated = bool(self.trainer_state.defeated.get(tid))
+            if defeated and trainer.get("leader"):
+                # beaten leader steps aside, off the door, and greys out
+                x -= TILE_SIZE
+            if not defeated:
                 if trainer.get("leader"):
                     color = (200, 50, 200)
                 elif trainer.get("rival"):

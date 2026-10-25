@@ -266,8 +266,48 @@ def test_level_gap_penalty():
     full = leveling.xp_for_defeat(10, 1, 10)
     assert leveling.xp_for_defeat(10, 1, 15) == full // 2
     assert leveling.xp_for_defeat(10, 1, 20) == full // 4
-    assert leveling.xp_for_defeat(10, 1, 25) == 0
+    assert leveling.xp_for_defeat(10, 1, 25) == max(1, full // 10)  # 15+: 10%, not 0
     assert leveling.xp_for_defeat(10, 1, 8) == full  # fighting up: full pay
+
+
+def test_participant_xp_share(game, tmp_path):
+    """Active monster gets full XP; standing participants get half; fainted get none."""
+    from src.battle.scene import BattleScene
+    from src.items.inventory import Inventory
+
+    active = mon("fernpup", 5)
+    helper = mon("brookfin", 5)
+    benched = mon("mossrat", 5)
+    fainted_helper = mon("chirrel", 5)
+    fainted_helper.hp = 0
+    game.world.party = [active, helper, benched, fainted_helper]
+    battle = BattleScene(
+        game, active, mon("mossrat", 5), inventory=Inventory({"potion_s": 1})
+    )
+    battle.intro_timer = 0
+    battle.participants = [active, helper, fainted_helper]
+    battle._enemy_free_attack = lambda: None
+    xp_active = leveling.xp_for_defeat(5, 1, 5)
+    before = {m: (m.level, m.xp) for m in (active, helper, benched, fainted_helper)}
+    msgs = battle._xp_messages(xp_active)
+    assert active.xp > before[active][1] or active.level > before[active][0]
+    assert helper.xp > 0, "standing participant must earn share"
+    assert fainted_helper.xp == 0 and fainted_helper.level == before[fainted_helper][0]
+    assert benched.xp == 0 and benched.level == before[benched][0], "benched gets nothing"
+
+
+def test_switch_registers_participant(game):
+    from src.battle.scene import BattleScene
+
+    active = mon("fernpup", 5)
+    helper = mon("brookfin", 5)
+    game.world.party = [active, helper]
+    battle = BattleScene(game, active, mon("mossrat", 6))
+    battle.intro_timer = 0
+    battle._enemy_free_attack = lambda: None
+    assert battle.participants == [active]
+    battle._do_switch(helper)
+    assert battle.participants == [active, helper]
 
 
 def test_levels_per_win_slowed():
@@ -291,3 +331,33 @@ def test_trainer_xp_no_longer_sums_team(game):
     assert xp_expected < sum(
         leveling.xp_for_defeat(m.level, m.species["tier"], 9) for m in battle.team
     )
+
+
+def test_undefeated_leader_blocks_their_door(game):
+    """The leader physically blocks the forward door until beaten."""
+    world = game.world
+    world.switch_zone("whispering_pines", 9, 11)
+    assert (9, 12) in world._leader_blocks()
+    # player cannot step onto the leader's tile
+    from src.engine.constants import TILE_SIZE
+
+    world.player.tile_x, world.player.tile_y = 9, 11
+    world.player.py = 11 * TILE_SIZE
+    world.game.input.held = {"down"}
+    world.player.update(1 / 60, world.tile_map, {"down"}, world._leader_blocks())
+    assert (world.player.tile_x, world.player.tile_y) == (9, 11)
+    # after defeat the door is free
+    world.trainer_state.defeated["fenwick"] = True
+    assert world._leader_blocks() == set()
+    world.player.update(1 / 60, world.tile_map, {"down"}, world._leader_blocks())
+    assert (world.player.tile_x, world.player.tile_y) == (9, 12)
+
+
+def test_defeated_leader_stepped_aside_not_interactable(game):
+    """After defeat the leader steps aside: facing the door no longer finds them."""
+    world = game.world
+    world.switch_zone("whispering_pines", 9, 11)
+    world.player.facing = "down"
+    assert world._leader_at(9, 12) is not None  # undefeated: blocks and talkable
+    world.trainer_state.defeated["fenwick"] = True
+    assert world._leader_at(9, 12) is None  # defeated: moved off the door

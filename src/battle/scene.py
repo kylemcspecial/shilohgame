@@ -39,6 +39,7 @@ class BattleScene:
         self.bag_index = 0
         self.shake_timer = 0.0
         self.party = list(getattr(game.world, "party", [player_monster]))
+        self.participants = [player_monster]  # monsters that fought in this battle
         self.switch_menu = False
         self.switch_index = 0
         self.force_switch = False
@@ -75,21 +76,34 @@ class BattleScene:
         return False
 
     def _xp_messages(self, xp):
-        """Apply XP and build level-up/evolution/learned-move messages."""
-        name_before = self.player_mon.name
-        events = leveling.grant_xp(self.player_mon, xp)
+        """Apply XP and build level-up/evolution/learned-move messages.
+
+        The active monster gets full XP; other battle participants that
+        are still standing get half (rounded down, min 1 when xp > 0).
+        """
         messages = []
-        for event in events:
-            if event["type"] == "level_up":
-                self.game.audio.level_up()
-                messages.append(f"{name_before} grew to level {event['level']}!")
-            elif event["type"] == "evolved":
-                messages.append(
-                    f"What? {self.player_mon.pre_evolution_name} evolved into {self.player_mon.name}!"
-                )
-            elif event["type"] == "learned_move":
-                move_name = load_moves()[event["move"]]["name"]
-                messages.append(f"{self.player_mon.name} learned {move_name}!")
+        for mon in self.participants:
+            if mon is self.player_mon:
+                share = xp
+            elif mon.fainted:
+                continue
+            else:
+                share = max(1, xp // 2) if xp > 0 else 0
+            if share <= 0:
+                continue
+            name_before = mon.name
+            events = leveling.grant_xp(mon, share)
+            for event in events:
+                if event["type"] == "level_up":
+                    self.game.audio.level_up()
+                    messages.append(f"{name_before} grew to level {event['level']}!")
+                elif event["type"] == "evolved":
+                    messages.append(
+                        f"What? {mon.pre_evolution_name} evolved into {mon.name}!"
+                    )
+                elif event["type"] == "learned_move":
+                    move_name = load_moves()[event["move"]]["name"]
+                    messages.append(f"{mon.name} learned {move_name}!")
         return messages
 
     # ------------------------------------------------------------------ input
@@ -330,6 +344,8 @@ class BattleScene:
     def _do_switch(self, new_mon):
         """Switch active monster; voluntary switching gives the enemy a free attack."""
         self._confirmed = True
+        if new_mon not in self.participants:
+            self.participants.append(new_mon)
         forced = self.force_switch
         self.player_mon = new_mon
         self.switch_menu = False

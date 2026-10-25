@@ -62,17 +62,19 @@ class Player:
         # up: hair covers face, no eyes
         return surface
 
-    def try_step(self, dx, dy, tile_map):
+    def try_step(self, dx, dy, tile_map, blocked_tiles=None):
         nx, ny = self.tile_x + dx, self.tile_y + dy
         self.facing = _FACING_FROM_DIR[(dx, dy)]
         if tile_map.is_solid(nx, ny):
+            return False
+        if blocked_tiles and (nx, ny) in blocked_tiles:
             return False
         self.tile_x, self.tile_y = nx, ny
         self.moving = True
         self.step_count += 1
         return True
 
-    def update(self, dt, tile_map, held=None):
+    def update(self, dt, tile_map, held=None, blocked_tiles=None):
         if self.moving:
             target_x = self.tile_x * TILE_SIZE
             target_y = self.tile_y * TILE_SIZE
@@ -86,13 +88,13 @@ class Player:
         if held is None:
             return
         if input_mod.UP in held:
-            self.try_step(0, -1, tile_map)
+            self.try_step(0, -1, tile_map, blocked_tiles)
         elif input_mod.DOWN in held:
-            self.try_step(0, 1, tile_map)
+            self.try_step(0, 1, tile_map, blocked_tiles)
         elif input_mod.LEFT in held:
-            self.try_step(-1, 0, tile_map)
+            self.try_step(-1, 0, tile_map, blocked_tiles)
         elif input_mod.RIGHT in held:
-            self.try_step(1, 0, tile_map)
+            self.try_step(1, 0, tile_map, blocked_tiles)
 
     def draw(self, surface, camera_x, camera_y):
         import math
