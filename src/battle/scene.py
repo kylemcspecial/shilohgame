@@ -70,10 +70,12 @@ class BattleScene:
         return min(self._read, len(self.messages) - 1)
 
     def _advance_message(self):
-        if self._read < len(self.messages) - 1:
+        """Advance 1 line normally, or several at Fast text speed."""
+        speed = max(1, int(getattr(self.game, "message_speed", 2)))
+        while speed > 0 and self._read < len(self.messages) - 1:
             self._read += 1
-            return True
-        return False
+            speed -= 1
+        return self._read < len(self.messages) - 1
 
     def _xp_messages(self, xp):
         """Apply XP and build level-up/evolution/learned-move messages.
@@ -113,6 +115,11 @@ class BattleScene:
             self.shake_timer -= dt
         if self.intro_timer > 0:
             self.intro_timer -= dt
+            if self.intro_timer <= 0 and not getattr(self, "_dex_seen", False):
+                self._dex_seen = True
+                world = getattr(self.game, "world", None)
+                if hasattr(world, "dex_register"):
+                    world.dex_register(self.enemy_mon)
             return
 
         pressed = self.game.input.pressed
@@ -254,6 +261,9 @@ class BattleScene:
         if success:
             self.game.audio.catch_success()
             self.caught_monster = self.enemy_mon
+            world = getattr(self.game, "world", None)
+            if hasattr(world, "dex_register"):
+                world.dex_register(self.enemy_mon, caught=True)
             catch_messages = [f"Gotcha! {self.enemy_mon.name} was caught!"]
             xp = leveling.xp_for_defeat(
                 self.enemy_mon.level, self.enemy_mon.species["tier"], self.player_mon.level
@@ -521,15 +531,26 @@ class BattleScene:
         """Move picker: name, type, PP; greyed out at 0 PP."""
         moves = self.player_mon.moves
         row_h = 11
-        rect = pygame.Rect(4, SCREEN_H - 26 - row_h * len(moves) - 2, 150,
-                           row_h * len(moves) + 4)
+        rect = pygame.Rect(4, SCREEN_H - 26 - row_h * len(moves) - 12, 170,
+                           row_h * len(moves) + 14)
+        hint_note = self.font.render(">> strong  x weak", False, (150, 150, 150), BLACK)
         pygame.draw.rect(surface, BLACK, rect)
         pygame.draw.rect(surface, WHITE, rect, 1)
         for i, mv in enumerate(moves):
             has_pp = mv["pp"] > 0
             color = WHITE if has_pp else (110, 110, 110)
+            # type-effectiveness hint vs the current enemy
+            mult = battle_mod.type_multiplier(
+                mv["data"]["type"], self.enemy_mon.types, self.type_chart
+            )
+            if mult > 1.0:
+                hint = ">>"
+            elif mult < 1.0:
+                hint = "x"
+            else:
+                hint = ""
             label = self.font.render(
-                f"{mv['data']['name']} {mv['data']['type'][:3].upper()} PP{mv['pp']}",
+                f"{mv['data']['name']} {mv['data']['type'][:3].upper()}{hint} PP{mv['pp']}",
                 False, color, BLACK,
             )
             y = rect.y + 2 + i * row_h
@@ -539,6 +560,7 @@ class BattleScene:
                     surface, WHITE,
                     [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
                 )
+        surface.blit(hint_note, (rect.x + 10, rect.bottom - 9))
 
     def _draw_switch_menu(self, surface):
         living = self._switchable()
@@ -621,11 +643,18 @@ class TrainerBattle(BattleScene):
         from ..monsters.monster import Monster, load_species, load_moves
 
         species, moves = load_species(), load_moves()
-        rematch = bool(trainer_data.get("leader")) and bool(
-            getattr(getattr(game, "world", None), "trainer_state", None)
-            and game.world.trainer_state.defeated.get(trainer_id)
+        world = getattr(game, "world", None)
+        defeated = bool(
+            world
+            and getattr(getattr(world, "trainer_state", None), "defeated", {}).get(trainer_id)
         )
-        level_boost = 3 if rematch else 0
+        rematch = bool(trainer_data.get("leader")) and defeated
+        level_boost = 0
+        if rematch:
+            # postgame: with the Ember Crown, beaten leaders field L45+ teams;
+            # otherwise rematches run at +3 levels
+            badges = getattr(world, "badge_ids", None) or []
+            level_boost = 12 if "ember_crown" in badges else 3
         self.team = [
             Monster(t["species"], min(50, t["level"] + level_boost), species, moves)
             for t in trainer_data["team"]
@@ -670,6 +699,9 @@ class TrainerBattle(BattleScene):
                     f"{self.trainer['name']} sent out {remaining[0].name}!",
                 ])
                 self.enemy_mon = remaining[0]
+                world = getattr(self.game, "world", None)
+                if hasattr(world, "dex_register"):
+                    world.dex_register(self.enemy_mon)  # later team members count as seen
                 return
             from ..monsters import leveling
 

@@ -102,6 +102,10 @@ class MainMenuScene:
             self._adjust_option(options[self.option_index][0],
                                 1 if input_mod.RIGHT in pressed else -1)
 
+    def _text_speed_label(self):
+        speed = getattr(self.game, "message_speed", 2)
+        return {1: "Slow", 2: "Normal", 4: "Fast"}[speed]
+
     def _option_rows(self):
         audio = self.game.audio
         day_night = getattr(self.game, "day_night_enabled", True)
@@ -110,10 +114,17 @@ class MainMenuScene:
             ("sfx", f"SFX Volume:   {int(audio.sfx_volume * 10)}"),
             ("fullscreen", f"Fullscreen:   {'On' if self.game.fullscreen else 'Off'}"),
             ("day_night", f"Day/Night:    {'On' if day_night else 'Off'}"),
+            ("text_speed", f"Text Speed:   {self._text_speed_label()}"),
         )
 
     def _adjust_option(self, key, direction):
         audio = self.game.audio
+        if key == "text_speed":
+            speeds = (1, 2, 4)
+            current = getattr(self.game, "message_speed", 2)
+            idx = (speeds.index(current) + direction) % len(speeds)
+            self.game.message_speed = speeds[idx]
+            return
         if key == "day_night":
             self.game.day_night_enabled = not getattr(
                 self.game, "day_night_enabled", True

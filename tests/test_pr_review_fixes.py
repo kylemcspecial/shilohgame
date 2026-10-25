@@ -82,11 +82,11 @@ def test_forced_switch_waits_for_messages(tmp_path):
     battle._check_outcome()
     assert battle.force_switch
     assert not battle.switch_menu, "picker must wait until messages are shown"
-    # confirm steps through every pending line, one at a time, starting at 0
-    for expected in range(len(battle.messages)):
-        assert battle.message_index == expected
+    # confirm drains the pending lines in speed-sized batches (default 2/press)
+    while battle.message_index < len(battle.messages) - 1:
         game.input.pressed = {"confirm"}
         battle.update(1 / 60)
+        game.input.pressed = set()
     game.input.pressed = set()
     battle.update(1 / 60)
     assert battle.switch_menu, "picker opens after the queue drains"
