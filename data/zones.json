@@ -139,9 +139,9 @@
         "T..#####..#####....T",
         "T.....R............T",
         "T..G..R.....N......T",
-        "T.....R............T",
-        "T.....R............T",
-        "T.....D............T",
+        "T.....RB..B........T",
+        "T.....R......B.....T",
+        "T.....D.ooo........T",
         "TTTT..D..D..D..TTTTT",
         "TTTTTTTTTTTTTTTTTTTT",
         "TTTTTTTTTTTTTTTTTTTT"
@@ -155,7 +155,9 @@
         "H": "healing_lodge",
         "S": "trap_shop",
         "D": "door",
-        "N": "npc"
+        "N": "npc",
+        "B": "boulder",
+        "o": "switch"
       },
       "warps": [
         {
@@ -186,7 +188,44 @@
           "tx": 9,
           "ty": 11
         }
-      ]
+      ],
+      "puzzle": {
+        "id": "boulder",
+        "type": "boulder",
+        "boulders": [
+          [
+            7,
+            9
+          ],
+          [
+            10,
+            9
+          ],
+          [
+            13,
+            10
+          ]
+        ],
+        "switches": [
+          [
+            8,
+            11
+          ],
+          [
+            9,
+            11
+          ],
+          [
+            10,
+            11
+          ]
+        ],
+        "gate": {
+          "x": 9,
+          "y": 12
+        },
+        "hint": "Push the boulders onto the three plates!"
+      }
     },
     "mossy_hollow": {
       "name": "Mossy Hollow",
@@ -203,9 +242,9 @@
         "T..GGG..GGG..GGG...T",
         "T...GG...G...GG....T",
         "T..GGG..GG...GGG...T",
-        "T...G...GGG....G...T",
+        "T...?...GGG....G...T",
         "T..GG...D.D....GG..T",
-        "TT..............TTTT",
+        "TT........~~~~~.TTTT",
         "TTT............TTTTT",
         "TTTTTTTTTTTTTTTTTTTT"
       ],
@@ -214,7 +253,9 @@
         ".": "grass",
         "G": "grass_tall",
         "R": "road",
-        "D": "door"
+        "D": "door",
+        "~": "stone_path",
+        "?": "riddle_stone"
       },
       "warps": [
         {
@@ -248,7 +289,34 @@
       "encounter_levels": [
         6,
         12
-      ]
+      ],
+      "puzzle": {
+        "id": "stones",
+        "type": "stones",
+        "sequence": [
+          [
+            10,
+            12
+          ],
+          [
+            12,
+            12
+          ],
+          [
+            11,
+            12
+          ],
+          [
+            13,
+            12
+          ]
+        ],
+        "gate": {
+          "x": 10,
+          "y": 11
+        },
+        "hint": "Watch the frog's dance across the stones!"
+      }
     },
     "thornwood_ridge": {
       "name": "Thornwood Ridge",
@@ -257,9 +325,9 @@
       "tiles": [
         "TTTTTTTTTTTTTTTTTTTT",
         "TT..GG...GG....GG.TT",
-        "T...GGG..GGG...GGG.T",
+        "T...GGG..?GG...GGG.T",
         "T..GGGG..GGG..GGGG.T",
-        "T..GGG....G...GGG..T",
+        "T..?GG....G...GG?..T",
         "T...G....GG....G...T",
         "T..GG...GGG...GG...T",
         "T..GGG..GGG..GGG...T",
@@ -276,7 +344,8 @@
         ".": "grass",
         "G": "grass_tall",
         "R": "road",
-        "D": "door"
+        "D": "door",
+        "?": "riddle_stone"
       },
       "warps": [
         {
@@ -311,7 +380,54 @@
         13,
         22
       ],
-      "legendary_chance": 0.01
+      "legendary_chance": 0.01,
+      "puzzle": {
+        "id": "riddles",
+        "type": "riddles",
+        "riddles": [
+          {
+            "id": "r1",
+            "x": 3,
+            "y": 4,
+            "question": "What grows when shared?",
+            "answers": [
+              "Coins",
+              "Knowledge",
+              "Hunger"
+            ],
+            "correct": 1
+          },
+          {
+            "id": "r2",
+            "x": 16,
+            "y": 4,
+            "question": "The more you take, the more you leave behind.",
+            "answers": [
+              "Steps",
+              "Berries",
+              "Traps"
+            ],
+            "correct": 0
+          },
+          {
+            "id": "r3",
+            "x": 9,
+            "y": 2,
+            "question": "What has a neck but no head?",
+            "answers": [
+              "A mossrat",
+              "A bottle",
+              "A fangmoth"
+            ],
+            "correct": 1
+          }
+        ],
+        "gate": {
+          "x": 10,
+          "y": 11
+        },
+        "hint": "Answer the three riddle stones!"
+      }
     },
     "fernfall": {
       "name": "Fernfall",
@@ -452,8 +568,8 @@
         "T..#####..#####....T",
         "T.....R............T",
         "T..G..R.....N......T",
-        "T.....R............T",
-        "T.....R............T",
+        "T.....RYY..........T",
+        "T.....RYY..........T",
         "T.....D............T",
         "TTTT..D..D..D..TTTTT",
         "TTTTTTTTTTTTTTTTTTTT",
@@ -468,7 +584,8 @@
         "H": "healing_lodge",
         "S": "trap_shop",
         "D": "door",
-        "N": "npc"
+        "N": "npc",
+        "Y": "lantern"
       },
       "warps": [
         {
@@ -499,7 +616,62 @@
           "tx": 7,
           "ty": 10
         }
-      ]
+      ],
+      "puzzle": {
+        "id": "lanterns",
+        "type": "lanterns",
+        "lanterns": [
+          [
+            7,
+            9
+          ],
+          [
+            8,
+            9
+          ],
+          [
+            7,
+            10
+          ],
+          [
+            8,
+            10
+          ]
+        ],
+        "layout": [
+          [
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            3
+          ],
+          [
+            0,
+            2,
+            3
+          ],
+          [
+            1,
+            2,
+            3
+          ]
+        ],
+        "start": [
+          true,
+          false,
+          false,
+          true
+        ],
+        "gate": {
+          "x": 9,
+          "y": 12
+        },
+        "hint": "Light all four lanterns! Each flips its neighbors too."
+      }
     }
   },
   "start_zone": "hunters_rest"
