@@ -531,8 +531,8 @@ class BattleScene:
         """Move picker: name, type, PP; greyed out at 0 PP."""
         moves = self.player_mon.moves
         row_h = 11
-        rect = pygame.Rect(4, SCREEN_H - 26 - row_h * len(moves) - 2, 150,
-                           row_h * len(moves) + 4)
+        rect = pygame.Rect(4, SCREEN_H - 26 - row_h * len(moves) - 12, 170,
+                           row_h * len(moves) + 14)
         hint_note = self.font.render(">> strong  x weak", False, (150, 150, 150), BLACK)
         pygame.draw.rect(surface, BLACK, rect)
         pygame.draw.rect(surface, WHITE, rect, 1)
@@ -550,7 +550,7 @@ class BattleScene:
             else:
                 hint = ""
             label = self.font.render(
-                f"{mv['data']['name']} {hint} PP{mv['pp']}",
+                f"{mv['data']['name']} {mv['data']['type'][:3].upper()}{hint} PP{mv['pp']}",
                 False, color, BLACK,
             )
             y = rect.y + 2 + i * row_h
@@ -560,7 +560,7 @@ class BattleScene:
                     surface, WHITE,
                     [(rect.x + 3, y + 3), (rect.x + 8, y + 6), (rect.x + 3, y + 9)],
                 )
-        surface.blit(hint_note, (rect.x + 10, rect.bottom - 10))
+        surface.blit(hint_note, (rect.x + 10, rect.bottom - 9))
 
     def _draw_switch_menu(self, surface):
         living = self._switchable()
@@ -699,6 +699,9 @@ class TrainerBattle(BattleScene):
                     f"{self.trainer['name']} sent out {remaining[0].name}!",
                 ])
                 self.enemy_mon = remaining[0]
+                world = getattr(self.game, "world", None)
+                if hasattr(world, "dex_register"):
+                    world.dex_register(self.enemy_mon)  # later team members count as seen
                 return
             from ..monsters import leveling
 

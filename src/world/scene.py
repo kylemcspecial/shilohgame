@@ -14,6 +14,7 @@ from ..world.encounters import EncounterTracker
 from ..monsters.monster import Monster, load_species, load_moves, roll_wild
 
 species_all = None  # lazy cache for night encounter variants
+_dex_ids = None  # cached species id order for the dex screen
 from ..items.inventory import Inventory
 from ..world.trainers import TrainerState, trainers_in_zone, load_trainers
 from ..world import puzzles as puzzle_mod
@@ -94,7 +95,6 @@ class WorldScene:
         self.dex_menu = False
         self.dex_index = 0
         self.map_menu = False
-        self.badges = []
         self.play_time = 0.0
         self.message = None
         self.message_timer = 0.0
@@ -1031,7 +1031,7 @@ class WorldScene:
         """Handle input while the pause menu is open."""
         pressed = self.game.input.pressed
         if self.dex_menu:
-            total = len(load_species())
+            total = len(self._dex_species_ids())
             if input_mod.UP in pressed:
                 self.dex_index = (self.dex_index - 1) % total
             elif input_mod.DOWN in pressed:
@@ -1120,10 +1120,17 @@ class WorldScene:
             label = self.font.render(line, False, WHITE, BLACK)
             surface.blit(label, (rect.x + 3, rect.y + 2 + i * 10))
 
+    def _dex_species_ids(self):
+        """Stable species id order for the dex, parsed once."""
+        global _dex_ids
+        if _dex_ids is None:
+            _dex_ids = list(load_species())
+        return _dex_ids
+
     def _draw_dex(self, surface):
         """Monster dex: species list with seen/caught marks, scrollable."""
-        species = load_species()
-        ids = list(species)
+        species = species_all or load_species()
+        ids = self._dex_species_ids()
         visible = 10
         window = pygame.Rect(8, 8, SCREEN_W - 16, 11 * visible + 14)
         pygame.draw.rect(surface, BLACK, window)
@@ -1161,24 +1168,20 @@ class WorldScene:
         pygame.draw.rect(surface, WHITE, rect, 1)
         title = self.font.render("YOUR JOURNEY", False, (255, 230, 140), BLACK)
         surface.blit(title, (rect.centerx - title.get_width() // 2, rect.y + 3))
-        chain = [("hunters_rest", None)] + list(_ZONE_CHAIN.items())
+        chain = [("hunters_rest", None)] + list(_ZONE_CHAIN.items()) + [
+            ("emberfern_glade", None)
+        ]
         for i, item in enumerate(chain):
-            if item[1] is None:
-                zid, name = item[0], self.zones[item[0]]["name"]
-                badge = None
-            else:
-                zid = item[0]
-                name = self.zones[item[0]]["name"]
-                badge = item[1][1]
+            zid, next_hop = item
+            name = self.zones[zid]["name"]
+            leader_id = next_hop[1] if next_hop else None
             y = rect.y + 16 + i * 11
             current = zid == self.zone_id
             color = (255, 230, 140) if current else WHITE
-            leader = self.trainers_data["trainers"][badge]["name"] if badge else None
             text = f"> {name}" if current else name
             label = self.font.render(text, False, color, BLACK)
             surface.blit(label, (rect.x + 8, y))
-            if leader:
-                leader_id = badge
+            if leader_id:
                 done = self.trainer_state.defeated.get(leader_id)
                 status = "OK!" if done else self.trainers_data["trainers"][leader_id]["name"]
                 slabel = self.font.render(status, False, (120, 220, 120) if done else (230, 120, 120), BLACK)

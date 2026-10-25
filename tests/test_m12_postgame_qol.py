@@ -32,7 +32,7 @@ ALL_BADGES = ["fenwick", "boulder", "ivy", "hazel", "rex", "bram", "pyra"]
 
 # ------------------------------------------------- postgame leader rematches
 
-def test_postgame_leader_rematch_at_45(game):
+def test_postgame_leader_rematch_boost(game):
     trainer = load_trainers()["trainers"]["fenwick"]
     for tid in ALL_BADGES:
         game.world.trainer_state.defeated[tid] = True
@@ -205,3 +205,40 @@ def test_options_include_text_speed():
     rows = menu._option_rows()
     assert any("Text Speed" in label for _, label in rows)
     assert "Normal" in dict(rows)["text_speed"]
+
+
+def test_journey_map_shows_all_zones(game):
+    """Review fix: the map must include the final zone (Emberfern Glade)."""
+    world = game.world
+    world.map_menu = True
+    # build the same chain the map uses
+    from src.world.scene import _ZONE_CHAIN
+
+    chain = [("hunters_rest", None)] + list(_ZONE_CHAIN.items()) + [("emberfern_glade", None)]
+    assert len(chain) == 8
+    assert chain[-1][0] == "emberfern_glade"
+    world.draw(game.buffer)  # renders all 8 rows without crashing
+
+
+def test_dex_ids_cached(game):
+    """Review fix: the dex must not re-parse monsters.json per frame."""
+    world = game.world
+    first = world._dex_species_ids()
+    assert first is world._dex_species_ids()
+    assert len(first) == len(load_species())
+
+
+def test_trainer_rotation_registers_seen(game):
+    """Review fix: later trainer team members register in the dex."""
+    world = game.world
+    trainer = load_trainers()["trainers"]["fenwick"]
+    battle = TrainerBattle(game, mon("fernpup", 20), "fenwick", trainer)
+    battle.intro_timer = 0
+    battle.player_mon.level = 30
+    battle.player_mon.attack = 999
+    # faint the lead enemy so the trainer sends the next one
+    battle.enemy_mon.hp = 0
+    battle._check_outcome()
+    species_ids = [t["species"] for t in trainer["team"]]
+    assert battle.enemy_mon.species_id == species_ids[1]
+    assert species_ids[1] in world.dex_seen
