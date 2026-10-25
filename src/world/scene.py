@@ -567,6 +567,7 @@ class WorldScene:
                     night_species = [
                         sid for sid, sp in species_all.items()
                         if any(t in sp["types"] for t in ("frost", "storm"))
+                        and sp["tier"] < 4
                         and sid not in zone["encounters"]
                     ]
                     if night_species:

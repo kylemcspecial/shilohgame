@@ -277,3 +277,21 @@ def test_night_variants_can_be_shiny(game):
 
     assert maybe_make_shiny(mon("sleetfox", 5), rng=Always).shiny
     assert not maybe_make_shiny(mon("sleetfox", 5), rng=Never).shiny
+
+
+def test_night_pool_excludes_legendaries(game):
+    """Review fix: tier-4 species only appear via the configured legendary roll."""
+    world = game.world
+    world.play_time = world.DAY_NIGHT_SECONDS * 2 / 3
+    assert world.is_night
+    zone = world.zones["whispering_pines"]
+    night_species = [
+        sid for sid, sp in load_species().items()
+        if any(t in sp["types"] for t in ("frost", "storm"))
+        and sp["tier"] < 4
+        and sid not in zone["encounters"]
+    ]
+    assert night_species
+    assert all(load_species()[sid]["tier"] < 4 for sid in night_species)
+    assert "legendary_verdant" not in night_species
+    assert "legendary_tidal" not in night_species
