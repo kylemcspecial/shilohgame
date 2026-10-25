@@ -95,6 +95,7 @@ class WorldScene:
         self.riddle_menu = None
         self.riddle_index = 0
         self.answer_index = 0
+        self.dance_timer = 0.0
         self._init_puzzle_state()
 
     def switch_zone(self, zone_id, tx, ty):
@@ -105,11 +106,21 @@ class WorldScene:
         self.player.moving = False
         self.zone_banner_timer = 2.0
         self.riddle_menu = None
+        self.dance_timer = 0.0
         self._init_puzzle_state()
 
     def _puzzle_def(self):
         """Puzzle definition for the current zone, or None."""
         return self.zones[self.zone_id].get("puzzle")
+
+    def _set_tile(self, tx, ty, char):
+        """Mutate the live tile grid (puzzles move things around)."""
+        self.tile_map.grid[ty][tx] = char
+        self.zones[self.zone_id]["tiles"][ty] = (
+            self.zones[self.zone_id]["tiles"][ty][:tx]
+            + char
+            + self.zones[self.zone_id]["tiles"][ty][tx + 1:]
+        )
 
     def _init_puzzle_state(self):
         """Load runtime puzzle state (boulder positions etc.) for this zone."""
@@ -122,6 +133,11 @@ class WorldScene:
         pid = p["id"]
         if p["type"] == "boulder":
             self.boulders = [tuple(b) for b in p["boulders"]]
+            # the static B tiles are just spawners: runtime boulders own
+            # collision and rendering, so clear them from the map grid
+            for bx, by in p["boulders"]:
+                if self.tile_map.tile_at(bx, by) == "B":
+                    self._set_tile(bx, by, ".")
         elif p["type"] == "lanterns":
             self.lanterns_on = list(self.puzzles.get(pid, "state", p["start"]))
         if self.puzzles.solved(pid):
@@ -378,7 +394,8 @@ class WorldScene:
                 self._flash(riddle["question"])
             return True
         if p["type"] == "stones" and char == "?":
-            self._flash(p["hint"])
+            self.dance_timer = 0.5 + 0.7 * len(p["sequence"])
+            self._flash("Watch the frog dance! (the stones light up in order)")
             return True
         return False
 
@@ -632,6 +649,9 @@ class WorldScene:
         if input_mod.CONFIRM in self.game.input.pressed:
             self._interact()
 
+        if self.dance_timer > 0:
+            self.dance_timer -= dt
+
         self.play_time += dt
         if self.message_timer > 0:
             self.message_timer -= dt
@@ -694,6 +714,20 @@ class WorldScene:
             total = len(p["sequence"])
             label = self.font.render(f"Dance: {done}/{total}", False, WHITE, BLACK)
             surface.blit(label, (SCREEN_W - label.get_width() - 2, 14))
+            # dance preview: while the timer runs, flash each stone in order
+            if self.dance_timer > 0:
+                elapsed = 0.5 + 0.7 * total - self.dance_timer
+                idx = int(elapsed / 0.7)
+                for i, (sx, sy) in enumerate(p["sequence"]):
+                    if i > idx:
+                        break
+                    x, y = sx * TILE_SIZE - cam_x, sy * TILE_SIZE - cam_y
+                    active = i == idx
+                    color = (255, 240, 150) if active else (150, 140, 110)
+                    num = self.font.render(str(i + 1), False, color, BLACK)
+                    surface.blit(num, (x + 6, y + 4))
+                    if active:
+                        pygame.draw.rect(surface, (255, 230, 120), (x, y, 16, 16), 1)
 
     def _draw_riddle_menu(self, surface):
         """Riddle box: question plus three answers with a cursor."""

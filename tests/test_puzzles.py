@@ -61,6 +61,32 @@ def test_puzzle_tiles_exist():
 
 # ------------------------------------------------------------------ boulder
 
+def test_pushed_boulder_leaves_no_ghost_tile(game):
+    """After init, static B tiles must be cleared: runtime boulders own collision."""
+    world = zone_with_puzzle(game, "pineroot_crossing")
+    p = world._puzzle_def()
+    for bx, by in p["boulders"]:
+        assert world.tile_map.tile_at(bx, by) == ".", (bx, by)
+        assert not world.tile_map.is_solid(bx, by)
+    # the vacated square stays walkable after a push
+    world.player.tile_x, world.player.tile_y = 6, 9
+    assert world._try_boulder_push({"right"}) == "pushed"
+    assert not world.tile_map.is_solid(7, 9), "vacated boulder tile must be walkable"
+
+
+def test_stone_hint_shows_the_dance(game):
+    """Interacting with the hint stone must present the sequence, not just text."""
+    world = zone_with_puzzle(game, "mossy_hollow")
+    p = world._puzzle_def()
+    assert world.dance_timer == 0.0
+    handled = world._try_puzzle_interact(4, 10)  # the ? hint stone
+    assert handled is True
+    assert world.dance_timer > 0
+    # and while it runs, drawing shows the numbered stones (no crash, HUD)
+    world.draw(game.buffer)
+    assert world.dance_timer > 0
+
+
 def test_boulder_push_moves_and_stops(game):
     world = zone_with_puzzle(game, "pineroot_crossing")
     p = world._puzzle_def()
