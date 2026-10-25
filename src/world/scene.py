@@ -1,6 +1,7 @@
 """Overworld scene: draws the zone, moves the player, shows a HUD."""
 import json
 import os
+import random as random_module
 
 import pygame
 
@@ -11,6 +12,8 @@ from ..world.tiles import TileMap, Tileset
 from ..world.player import Player, camera_offset
 from ..world.encounters import EncounterTracker
 from ..monsters.monster import Monster, load_species, load_moves, roll_wild
+
+species_all = None  # lazy cache for night encounter variants
 from ..items.inventory import Inventory
 from ..world.trainers import TrainerState, trainers_in_zone, load_trainers
 from ..world import puzzles as puzzle_mod
@@ -89,6 +92,10 @@ class WorldScene:
         self.message_timer = 0.0
         self.save_slot = None
         self.puzzles = puzzle_mod.ZonePuzzles()
+        self.berry_patches = {}
+        global species_all
+        if species_all is None:
+            species_all = load_species()
         self.boulders = None  # (zone_id -> list of positions) runtime state
         self.stones_entered = None
         self.lanterns_on = None
@@ -150,6 +157,15 @@ class WorldScene:
     @property
     def zone_name(self):
         return self.zones[self.zone_id]["name"]
+
+    DAY_NIGHT_SECONDS = 720.0  # 12-minute cycle: ~8 min day, ~4 min night
+
+    @property
+    def is_night(self):
+        """Night is the last third of each 12-minute cycle."""
+        if not getattr(self.game, "day_night_enabled", True):
+            return False
+        return (self.play_time % self.DAY_NIGHT_SECONDS) >= self.DAY_NIGHT_SECONDS * 2 / 3
 
     @property
     def player_level(self):
@@ -366,8 +382,33 @@ class WorldScene:
                     badges.append(t["badge"])
         return badges
 
+    _BERRY_REGROW_SECONDS = 600.0  # 10 minutes of playtime
+
+    def _try_berry_pick(self, tx, ty):
+        """Pick a berry plant if ripe. Returns True if handled."""
+        if self.tile_map.tile_at(tx, ty) != "b":
+            return False
+        ripe_at = self.berry_patches.get((self.zone_id, tx, ty))
+        if ripe_at is not None and ripe_at > self.play_time:
+            self._flash("The bush is still regrowing...")
+            return True
+        import random
+
+        n = random.randint(1, 3)
+        if "bloom" in self.badge_ids:
+            n *= 2
+        self.inventory.add("berry", n)
+        self.game.audio.confirm()
+        self.berry_patches[(self.zone_id, tx, ty)] = (
+            self.play_time + self._BERRY_REGROW_SECONDS
+        )
+        self._flash(f"You picked {n} berries!" if n > 1 else "You picked 1 berry!")
+        return True
+
     def _try_puzzle_interact(self, tx, ty):
         """Interact with a puzzle tile the player faces. Returns True if handled."""
+        if self._try_berry_pick(tx, ty):
+            return True
         p = self._puzzle_def()
         if p is None or self.puzzles.solved(p["id"]):
             return False
@@ -519,6 +560,26 @@ class WorldScene:
                     return
                 from ..battle.scene import BattleScene
 
+                if self.is_night and random_module.random() < 0.25:
+                    night_species = [
+                        sid for sid, sp in species_all.items()
+                        if any(t in sp["types"] for t in ("frost", "storm"))
+                        and sid not in zone["encounters"]
+                    ]
+                    if night_species:
+                        from ..battle.scene import BattleScene
+                        from ..monsters.monster import Monster
+
+                        pick = random_module.choice(night_species)
+                        lo, hi = zone["encounter_levels"]
+                        enemy = Monster(
+                            pick, random_module.randint(lo, min(hi + 2, 50)),
+                            species_all, load_moves(),
+                        )
+                        self.game.start_battle(
+                            BattleScene(self.game, lead, enemy, inventory=self.inventory)
+                        )
+                        return
                 enemy = roll_wild(zone, party=self.party)
                 self.game.start_battle(
                     BattleScene(self.game, lead, enemy, inventory=self.inventory)
@@ -567,7 +628,7 @@ class WorldScene:
         tid, trainer = found
         if trainer.get("rival") or trainer.get("leader"):
             return  # rivals and leaders are talk-to-battle, never ambushed
-        if not self.trainer_state.can_challenge(tid, trainer):
+        if not self.trainer_state.can_challenge(tid, trainer, self.badge_ids):
             return
         if self.trainer_state.defeated.get(tid) and not trainer.get("rival"):
             pass  # cooldown handled by can_challenge
@@ -593,7 +654,7 @@ class WorldScene:
         rival = self._rival_at(tx, ty) or self._leader_at(tx, ty)
         if rival is not None:
             tid, trainer = rival
-            if self.trainer_state.can_challenge(tid, trainer):
+            if self.trainer_state.can_challenge(tid, trainer, self.badge_ids):
                 self.trainer_state.record_start(tid)
                 from ..battle.scene import TrainerBattle
 
@@ -606,7 +667,14 @@ class WorldScene:
                     self.heal_and_revive()
             else:
                 blocked = trainer.get("requires_defeat")
-                if blocked and not self.trainer_state.defeated.get(blocked):
+                missing_badge = trainer.get("requires_badge")
+                if missing_badge and missing_badge not in self.badge_ids:
+                    badge_name = next(
+                        (t["badge_name"] for t in self.trainers_data["trainers"].values()
+                         if t.get("badge") == missing_badge), "a badge",
+                    )
+                    self._flash(f"{self.rival_name} says: come back with the {badge_name}!")
+                elif blocked and not self.trainer_state.defeated.get(blocked):
                     self._flash(f"{self.rival_name} says: catch me in Fernfall later!")
                 elif trainer.get("leader"):
                     self._flash(f"{trainer['name']} says: come back stronger!")
@@ -689,6 +757,12 @@ class WorldScene:
             self._draw_shop(surface)
         if self.paused:
             self._draw_pause(surface)
+        if self.is_night:
+            tint = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+            tint.fill((20, 24, 70, 80))
+            surface.blit(tint, (0, 0))
+            clock = self.font.render("Night", False, (170, 180, 255), BLACK)
+            surface.blit(clock, (SCREEN_W // 2 - clock.get_width() // 2, 2))
 
     def _draw_puzzles(self, surface, cam_x, cam_y):
         """Overlay puzzle state: boulders, lit lanterns, stone progress."""

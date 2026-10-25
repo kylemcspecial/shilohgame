@@ -104,14 +104,21 @@ class MainMenuScene:
 
     def _option_rows(self):
         audio = self.game.audio
+        day_night = getattr(self.game, "day_night_enabled", True)
         return (
             ("music", f"Music Volume: {int(audio.music_volume * 10)}"),
             ("sfx", f"SFX Volume:   {int(audio.sfx_volume * 10)}"),
             ("fullscreen", f"Fullscreen:   {'On' if self.game.fullscreen else 'Off'}"),
+            ("day_night", f"Day/Night:    {'On' if day_night else 'Off'}"),
         )
 
     def _adjust_option(self, key, direction):
         audio = self.game.audio
+        if key == "day_night":
+            self.game.day_night_enabled = not getattr(
+                self.game, "day_night_enabled", True
+            )
+            return
         if key == "music":
             audio.music_volume = min(1.0, max(0.0, audio.music_volume + 0.1 * direction))
         elif key == "sfx":

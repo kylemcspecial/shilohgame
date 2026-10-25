@@ -87,6 +87,12 @@ def _level_up(monster):
     monster.brace_stacks = 0
     monster.speed = monster.species["base_stats"]["speed"] + monster.level // 2
     monster.special = monster.species["base_stats"]["special"] + monster.level // 2
+    if getattr(monster, "shiny", False):
+        # shiny +10% survives level ups: re-apply on the rebuilt stats
+        monster.max_hp = int(monster.max_hp * 1.1)
+        monster.attack = int(monster.attack * 1.1)
+        monster.defense = int(monster.defense * 1.1)
+        monster.speed = int(monster.speed * 1.1)
 
 
 def _learn_move_at_level(monster):
