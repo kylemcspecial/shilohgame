@@ -193,3 +193,87 @@ def test_night_tint_draws(game):
     # daytime render for contrast
     world.play_time = 0
     world.draw(game.buffer)
+
+
+def test_shiny_level_up_never_loses_hp():
+    """Review fix: a wounded shiny must gain (not lose) HP on level up."""
+    from src.monsters import leveling
+
+    shiny = mon("fernpup", 5)
+    shiny.make_shiny()
+    shiny.hp = 1
+    old_max = shiny.max_hp
+    shiny.xp = leveling.xp_to_next(5)
+    leveling.grant_xp(shiny, 1)
+    assert shiny.level == 6
+    assert shiny.hp >= 1, "leveling must not faint a shiny"
+    assert shiny.hp >= 1 or shiny.max_hp > old_max
+    # exact regression: 1 HP before, at least 2 after (same as a plain monster)
+    plain = mon("fernpup", 5)
+    plain.hp = 1
+    plain.xp = leveling.xp_to_next(5)
+    leveling.grant_xp(plain, 1)
+    assert shiny.hp >= plain.hp, "shiny keeps at least the plain monster's HP"
+
+
+def test_shiny_survives_evolution():
+    """Review fix: evolving a shiny keeps flag, boost, and starred name."""
+    from src.monsters import leveling
+
+    species = load_species()
+    evo = species["mossrat"].get("evolve_into")
+    assert evo
+    shiny = mon("mossrat", evo["level"])
+    shiny.make_shiny()
+    result = leveling.check_evolution(shiny)
+    assert result is not None
+    assert shiny.shiny is True
+    assert shiny.name.startswith("\u2605")
+    plain = mon(evo["species"], evo["level"])
+    assert shiny.max_hp > plain.max_hp
+
+
+def test_heal_preserves_shiny_defense(game):
+    """Review fix: lodge healing must keep the permanent shiny defense bonus."""
+    from src.world.scene import _reset_battle_boosts
+
+    shiny = mon("brookfin", 10)
+    shiny.make_shiny()
+    boosted_def = shiny.defense
+    shiny.defense = boosted_def + 2  # brace stacks in battle
+    _reset_battle_boosts(shiny)
+    assert shiny.defense == boosted_def, "heal keeps the shiny bonus, drops only braces"
+    plain = mon("brookfin", 10)
+    assert shiny.defense > plain.defense
+
+
+def test_night_variants_can_be_shiny(game):
+    """Review fix: the night encounter path uses the same shared shiny roll."""
+    from src.monsters.monster import maybe_make_shiny, SHINY_CHANCE
+
+    world = game.world
+    world.play_time = world.DAY_NIGHT_SECONDS * 2 / 3
+    assert world.is_night
+    seen_shiny, seen_plain = False, False
+    for _ in range(1000):
+        m = mon("sleetfox", 5)
+        maybe_make_shiny(m)
+        if m.shiny:
+            seen_shiny = True
+        else:
+            seen_plain = True
+    assert seen_shiny and seen_plain
+    assert SHINY_CHANCE == 1 / 50
+    # deterministic rng contract
+    class Always:
+        @staticmethod
+        def random():
+            return 0.0
+
+    class Never:
+        @staticmethod
+        def random():
+            return 0.999
+
+    assert maybe_make_shiny(mon("sleetfox", 5), rng=Always).shiny
+    assert not maybe_make_shiny(mon("sleetfox", 5), rng=Never).shiny

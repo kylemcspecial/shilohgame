@@ -68,6 +68,17 @@ class Monster:
         return [m for m in self.moves if m["pp"] > 0]
 
 
+SHINY_CHANCE = 1 / 50
+
+
+def maybe_make_shiny(mon, rng=None):
+    """Shared shiny roll for every wild encounter path."""
+    rng = rng or random
+    if rng.random() < SHINY_CHANCE:
+        mon.make_shiny()
+    return mon
+
+
 def roll_wild(zone, party=None, species_table=None, move_table=None):
     """Pick a random wild monster for a zone using its encounter table.
 
@@ -92,6 +103,4 @@ def roll_wild(zone, party=None, species_table=None, move_table=None):
         species_id = random.choice(legendaries)
         level = min(50, hi + 2)
     mon = Monster(species_id, level, species_table, move_table)
-    if random.random() < 1 / 50:
-        mon.make_shiny()
-    return mon
+    return maybe_make_shiny(mon)

@@ -26,6 +26,9 @@ def _reset_battle_boosts(mon):
     mon.hp = mon.max_hp
     mon.brace_stacks = 0
     mon.defense = mon.species["base_stats"]["defense"] + mon.level // 2
+    if getattr(mon, "shiny", False):
+        # the shiny defense bonus is permanent, not a battle boost
+        mon.defense = int(mon.defense * 1.1)
     for mv in mon.moves:
         mv["pp"] = mv["data"]["pp"]
 
@@ -576,6 +579,9 @@ class WorldScene:
                             pick, random_module.randint(lo, min(hi + 2, 50)),
                             species_all, load_moves(),
                         )
+                        from ..monsters.monster import maybe_make_shiny
+
+                        maybe_make_shiny(enemy)  # same 1/50 roll as roll_wild
                         self.game.start_battle(
                             BattleScene(self.game, lead, enemy, inventory=self.inventory)
                         )
