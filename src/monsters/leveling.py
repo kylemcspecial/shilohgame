@@ -68,6 +68,9 @@ def check_evolution(monster, species_table=None):
     xp = getattr(monster, "xp", 0)
 
     new_mon = Monster(evo["species"], monster.level, species_table, load_moves())
+    if getattr(monster, "shiny", False):
+        # shininess survives evolution: boost the new form, then restore ratio
+        new_mon.make_shiny()
     new_mon.hp = max(1, int(new_mon.max_hp * hp_ratio))
     new_mon.moves = moves
     new_mon.xp = xp
@@ -79,14 +82,22 @@ def check_evolution(monster, species_table=None):
 
 def _level_up(monster):
     monster.level += 1
+    shiny = bool(getattr(monster, "shiny", False))
     old_max = monster.max_hp
     monster.max_hp = monster.species["base_stats"]["hp"] + 2 * monster.level
-    monster.hp = min(monster.max_hp, monster.hp + (monster.max_hp - old_max))
     monster.attack = monster.species["base_stats"]["attack"] + monster.level // 2
     monster.defense = monster.species["base_stats"]["defense"] + monster.level // 2
     monster.brace_stacks = 0
     monster.speed = monster.species["base_stats"]["speed"] + monster.level // 2
     monster.special = monster.species["base_stats"]["special"] + monster.level // 2
+    if shiny:
+        # re-apply the shiny boost on the rebuilt stats BEFORE the HP gain,
+        # so max comparisons stay consistent (old_max was also boosted)
+        monster.max_hp = int(monster.max_hp * 1.1)
+        monster.attack = int(monster.attack * 1.1)
+        monster.defense = int(monster.defense * 1.1)
+        monster.speed = int(monster.speed * 1.1)
+    monster.hp = min(monster.max_hp, monster.hp + (monster.max_hp - old_max))
 
 
 def _learn_move_at_level(monster):

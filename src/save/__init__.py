@@ -39,6 +39,10 @@ def serialize(world):
         },
         "puzzle_state": getattr(world, "puzzles", None).serialize()
         if getattr(world, "puzzles", None) else {},
+        "berry_patches": {
+            f"{zid}:{x}:{y}": t for (zid, x, y), t in
+            getattr(world, "berry_patches", {}).items()
+        },
     }
 
 
@@ -49,6 +53,7 @@ def _serialize_monster(m):
         "xp": getattr(m, "xp", 0),
         "hp": m.hp,
         "moves": [{"id": mv["id"], "pp": mv["pp"]} for mv in m.moves],
+        "shiny": bool(getattr(m, "shiny", False)),
     }
 
 
@@ -131,6 +136,8 @@ def _restore_monster(entry, species_table, move_table):
             })
         if restored:
             mon.moves = restored
+    if entry.get("shiny"):
+        mon.make_shiny()
     mon.hp = min(mon.max_hp, max(0, entry.get("hp", mon.max_hp)))
     return mon
 
@@ -167,3 +174,9 @@ def apply_save(world, data):
     if puzzles is not None:
         puzzles.state = data.get("puzzle_state", {}) or {}
         world._init_puzzle_state()
+    patches = getattr(world, "berry_patches", None)
+    if patches is not None:
+        world.berry_patches = {}
+        for k, t in (data.get("berry_patches", {}) or {}).items():
+            zid, x, y = k.split(":", 2)
+            world.berry_patches[(zid, int(x), int(y))] = t

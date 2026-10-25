@@ -42,6 +42,7 @@ class Monster:
         self.special = base["special"] + level // 2
         self.hp = self.max_hp
         self.xp = 0
+        self.shiny = False
         self.moves = [
             {"id": move_id, "data": dict(move_table[move_id]), "pp": move_table[move_id]["pp"]}
             for move_id in self.species["moves"]
@@ -51,8 +52,31 @@ class Monster:
     def fainted(self):
         return self.hp <= 0
 
+    def make_shiny(self):
+        """Golden sparkle variant: +10% stats, star-prefixed display name."""
+        if self.shiny:
+            return
+        self.shiny = True
+        self.max_hp = int(self.max_hp * 1.1)
+        self.hp = self.max_hp
+        self.attack = int(self.attack * 1.1)
+        self.defense = int(self.defense * 1.1)
+        self.speed = int(self.speed * 1.1)
+        self.name = f"\u2605 {self.name}"
+
     def usable_moves(self):
         return [m for m in self.moves if m["pp"] > 0]
+
+
+SHINY_CHANCE = 1 / 50
+
+
+def maybe_make_shiny(mon, rng=None):
+    """Shared shiny roll for every wild encounter path."""
+    rng = rng or random
+    if rng.random() < SHINY_CHANCE:
+        mon.make_shiny()
+    return mon
 
 
 def roll_wild(zone, party=None, species_table=None, move_table=None):
@@ -78,4 +102,5 @@ def roll_wild(zone, party=None, species_table=None, move_table=None):
         legendaries = [sid for sid, s in species_table.items() if s["tier"] == 4]
         species_id = random.choice(legendaries)
         level = min(50, hi + 2)
-    return Monster(species_id, level, species_table, move_table)
+    mon = Monster(species_id, level, species_table, move_table)
+    return maybe_make_shiny(mon)

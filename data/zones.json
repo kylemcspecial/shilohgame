@@ -64,12 +64,12 @@
         "TTTTTTTTTTTTTTTTTTTT",
         "TT........G.......TT",
         "T...GG....G..GG....T",
-        "T..GGGG......GGG...T",
+        "T..GGGb......GGG...T",
         "T..GGGG...GG.GGG...T",
         "T...GG....GGG......T",
         "T........GGG...G...T",
         "T...G...GGG....GG..T",
-        "T..GGG..GG.....G...T",
+        "T..GGG..GG...b.G...T",
         "T..GGG.........GG..T",
         "T...G.....D......G.T",
         "T........D.........T",
@@ -82,7 +82,8 @@
         ".": "grass",
         "G": "grass_tall",
         "R": "road",
-        "D": "door"
+        "D": "door",
+        "b": "berry_plant"
       },
       "warps": [
         {
@@ -235,10 +236,10 @@
         "TTTTTTTTTTTTTTTTTTTT",
         "TT..GG...GG....GG.TT",
         "T...GGG..GGG...GGG.T",
-        "T..GGGG..GGG..GGGG.T",
+        "T..GGGG..GGG.bGGGG.T",
         "T..GGG....G...GGG..T",
         "T...G....GG....G...T",
-        "T..GG...GGG...GG...T",
+        "T..GGb..GGG...GG...T",
         "T..GGG..GGG..GGG...T",
         "T...GG...G...GG....T",
         "T..GGG..GG...GGG...T",
@@ -255,7 +256,8 @@
         "R": "road",
         "D": "door",
         "~": "stone_path",
-        "?": "riddle_stone"
+        "?": "riddle_stone",
+        "b": "berry_plant"
       },
       "warps": [
         {
@@ -327,9 +329,9 @@
         "TT..GG...GG....GG.TT",
         "T...GGG..?GG...GGG.T",
         "T..GGGG..GGG..GGGG.T",
-        "T..?GG....G...GG?..T",
+        "T..?GG....G...bG?..T",
         "T...G....GG....G...T",
-        "T..GG...GGG...GG...T",
+        "T..GGb..GGG...GG...T",
         "T..GGG..GGG..GGG...T",
         "T...GG...G...GG....T",
         "T..GGG..GG...GGG...T",
@@ -345,7 +347,8 @@
         "G": "grass_tall",
         "R": "road",
         "D": "door",
-        "?": "riddle_stone"
+        "?": "riddle_stone",
+        "b": "berry_plant"
       },
       "warps": [
         {
@@ -502,10 +505,10 @@
         "T...GGG..GGG...GGG.T",
         "T..GGGG..GGG..GGGG.T",
         "T..GGG....G...GGG..T",
-        "T...G....GG....G...T",
+        "T...G.b..GG....G...T",
         "T..GG...GGG...GG...T",
         "T..GGG..GGG..GGG...T",
-        "T...GG...G...GG....T",
+        "T...GG...G...bG....T",
         "T..GGG..GG...GGG...T",
         "T...G...GGG....G...T",
         "T..GG...D.D....GG..T",
@@ -518,7 +521,8 @@
         ".": "grass",
         "G": "grass_tall",
         "R": "road",
-        "D": "door"
+        "D": "door",
+        "b": "berry_plant"
       },
       "warps": [
         {

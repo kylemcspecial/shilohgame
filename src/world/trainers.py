@@ -19,8 +19,11 @@ class TrainerState:
         self.defeated = {}
         self.last_battled = {}
 
-    def can_challenge(self, trainer_id, trainer):
+    def can_challenge(self, trainer_id, trainer, badges=None):
         if trainer.get("requires_defeat") and not self.defeated.get(trainer["requires_defeat"]):
+            return False
+        needed = trainer.get("requires_badge")
+        if needed and not (badges and needed in badges):
             return False
         if not self.defeated.get(trainer_id):
             return True  # never beaten them; always allow

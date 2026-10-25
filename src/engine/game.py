@@ -18,6 +18,7 @@ class Game:
         pygame.joystick.init()
         pygame.display.set_caption("Fierce Monster Hunter")
         self.fullscreen = False
+        self.day_night_enabled = True
         self.screen = pygame.display.set_mode((SCREEN_W * 3, SCREEN_H * 3), pygame.SCALED)
         self.buffer = pygame.Surface((SCREEN_W, SCREEN_H))
         self.clock = pygame.time.Clock()

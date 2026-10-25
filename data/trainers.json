@@ -338,6 +338,80 @@
           "level": 35
         }
       ]
+    },
+    "emmett_r1": {
+      "name": "Emmett",
+      "zone": "pineroot_crossing",
+      "x": 8,
+      "y": 8,
+      "intro": "Badges look good on you! Let's see if they're just for show!",
+      "defeat": "Okay, okay! You've gotten scary good!",
+      "reward": 120,
+      "rival": true,
+      "requires_defeat": "emmett_1",
+      "requires_badge": "pine",
+      "team": [
+        {
+          "species": "fangmoth",
+          "level": 10
+        },
+        {
+          "species": "brookfin",
+          "level": 10
+        }
+      ]
+    },
+    "emmett_r2": {
+      "name": "Emmett",
+      "zone": "fernfall",
+      "x": 8,
+      "y": 8,
+      "intro": "Two badges in and still chasing me? Race you to the top!",
+      "defeat": "You really are the real deal, aren't you?",
+      "reward": 300,
+      "rival": true,
+      "requires_defeat": "emmett_r1",
+      "requires_badge": "fern",
+      "team": [
+        {
+          "species": "fangmoth",
+          "level": 20
+        },
+        {
+          "species": "thornbear",
+          "level": 20
+        },
+        {
+          "species": "stormmoth",
+          "level": 21
+        }
+      ]
+    },
+    "emmett_r3": {
+      "name": "Emmett",
+      "zone": "mossy_hollow_gate",
+      "x": 8,
+      "y": 8,
+      "intro": "The Thornwick gate is MY proving ground. Show me your last badge!",
+      "defeat": "Go on then, hunter. The glade is waiting for you.",
+      "reward": 500,
+      "rival": true,
+      "requires_defeat": "emmett_r2",
+      "requires_badge": "thorn",
+      "team": [
+        {
+          "species": "stormmoth",
+          "level": 30
+        },
+        {
+          "species": "granitewyrm",
+          "level": 30
+        },
+        {
+          "species": "infernox",
+          "level": 31
+        }
+      ]
     }
   },
   "townsfolk": {

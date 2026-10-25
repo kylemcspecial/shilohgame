@@ -153,6 +153,18 @@ def _paint_door(surface):
     pygame.draw.rect(surface, (255, 220, 120), (4, 14, 8, 1))
 
 
+def _paint_berry_plant(surface):
+    """Berry plant: bush with red berries (picked state drawn in scene)."""
+    g = PALETTES["tallgrass"]
+    surface.fill(PALETTES["grass"]["mid"])
+    dither(surface, (0, 0, TILE, TILE), PALETTES["grass"]["light"], PALETTES["grass"]["mid"])
+    pygame.draw.circle(surface, (24, 64, 32), (8, 9), 6)
+    pygame.draw.circle(surface, (48, 112, 48), (8, 8), 6)
+    for bx, by in ((5, 7), (9, 6), (7, 10), (10, 9)):
+        pygame.draw.circle(surface, (200, 50, 60), (bx, by), 1)
+        surface.set_at((bx, by - 1), (255, 120, 120))
+
+
 def _paint_boulder(surface):
     """Pushable boulder: round rock with shading, sits on grass."""
     g = PALETTES["grass"]
@@ -232,6 +244,7 @@ _PAINTERS = {
     "S": _paint_shop,
     "D": _paint_door,
     "B": _paint_boulder,
+    "b": _paint_berry_plant,
     "o": _paint_switch,
     "~": _paint_stone_path,
     "Y": _paint_lantern,
