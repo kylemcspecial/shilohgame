@@ -512,7 +512,7 @@
         "T..GGG..GG...GGG...T",
         "T...G...GGG....G...T",
         "T..GG...D.D....GG..T",
-        "TT..............TTTT",
+        "TT.......L......TTTT",
         "TTT............TTTTT",
         "TTTTTTTTTTTTTTTTTTTT"
       ],
@@ -522,7 +522,8 @@
         "G": "grass_tall",
         "R": "road",
         "D": "door",
-        "b": "berry_plant"
+        "b": "berry_plant",
+        "L": "legendary_shrine"
       },
       "warps": [
         {
@@ -556,7 +557,23 @@
         23,
         35
       ],
-      "legendary_chance": 0.02
+      "legendary_chance": 0.02,
+      "legendary_shrine": {
+        "x": 9,
+        "y": 12,
+        "requires_badge": "ember_crown",
+        "species": [
+          "legendary_verdant",
+          "legendary_tidal",
+          "legendary_ember"
+        ],
+        "levels": [
+          42,
+          44,
+          46
+        ],
+        "hint": "The shrine hums... A legendary presence stirs!"
+      }
     },
     "mossy_hollow_gate": {
       "name": "Thornwick",

@@ -158,7 +158,7 @@ def test_shop_badge_unlocks(game):
 def test_storage_requires_fern_badge(game):
     world = game.world
     world.paused = True
-    world.pause_index = 2  # Storage
+    world.pause_index = world._PAUSE_MENU.index("Storage")
     world.game.input.pressed = {"confirm"}
     world._update_pause_menu()
     assert not world.storage_menu

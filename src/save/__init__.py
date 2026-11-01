@@ -39,6 +39,8 @@ def serialize(world):
         },
         "puzzle_state": getattr(world, "puzzles", None).serialize()
         if getattr(world, "puzzles", None) else {},
+        "dex_seen": list(getattr(world, "dex_seen", [])),
+        "dex_caught": list(getattr(world, "dex_caught", [])),
         "berry_patches": {
             f"{zid}:{x}:{y}": t for (zid, x, y), t in
             getattr(world, "berry_patches", {}).items()
@@ -176,6 +178,8 @@ def apply_save(world, data):
         world._init_puzzle_state()
     patches = getattr(world, "berry_patches", None)
     if patches is not None:
+        world.dex_seen = list(data.get("dex_seen", []))
+        world.dex_caught = list(data.get("dex_caught", []))
         world.berry_patches = {}
         for k, t in (data.get("berry_patches", {}) or {}).items():
             zid, x, y = k.split(":", 2)
